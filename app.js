@@ -76,6 +76,36 @@ function calcEdgeScore(edgePct, bookCount) {
   return score;
 }
 
+// Full row score combining edge, book disagreement, book count, injury
+function calcRowScore(edgePct, bookCount, disagreement, injPenalty) {
+  if (edgePct <= 0.3) return null; // No meaningful edge
+  
+  // Base score from edge vs sharp consensus
+  let score;
+  if (edgePct >= 8)      score = 10;
+  else if (edgePct >= 6) score = 9;
+  else if (edgePct >= 5) score = 8;
+  else if (edgePct >= 4) score = 7;
+  else if (edgePct >= 3) score = 6;
+  else if (edgePct >= 2) score = 5;
+  else if (edgePct >= 1) score = 4;
+  else if (edgePct >= 0.5) score = 3;
+  else score = 2;
+
+  // Bonus: more books = more confident consensus
+  if (bookCount >= 6) score = Math.min(10, score + 1);
+  else if (bookCount >= 4) score = Math.min(10, score + 0.5);
+
+  // Bonus: high book disagreement means a soft book is out of step = opportunity
+  if (disagreement >= 5) score = Math.min(10, score + 1);
+  else if (disagreement >= 3) score = Math.min(10, score + 0.5);
+
+  // Injury penalty — line may not reflect missing player yet
+  score = Math.max(1, score - injPenalty);
+
+  return Math.round(score);
+}
+
 // ── DATA CACHES ───────────────────────────────────────────────────────────────
 let scoresCache = {};
 let injuryCache = {};
@@ -301,6 +331,7 @@ function renderGames(games, sport) {
           ${bookBadge(b)}
           <span class="book-label">${cleanBook(b)}</span>
         </th>`).join('')}
+      <th class="score-th">Score</th>
     </tr></thead>`;
 
     const tbody = document.createElement('tbody');
@@ -341,18 +372,31 @@ function renderGames(games, sport) {
         // Determine if any cell has a good edge
         let rowHasEdge = false;
 
+        // Calculate best row-level EV score
+        let bestEdge = 0;
+        let bookDisagreement = 0;
+        if (trueProb && bestPrice) {
+          const bestImplied = decimalToImplied(americanToDecimal(bestPrice));
+          bestEdge = trueProb - bestImplied;
+          // Book disagreement = spread between best and worst price implied probs
+          const worstPrice = Math.min(...Object.values(bookData).map(d=>d.price));
+          const worstImplied = decimalToImplied(americanToDecimal(worstPrice));
+          const bestImpliedVal = decimalToImplied(americanToDecimal(bestPrice));
+          bookDisagreement = Math.abs(bestImpliedVal - worstImplied);
+        }
+        // Injury penalty: hurts the team that lost a player
+        const injPenalty = outcomeName === game.away_team ? Math.round(homePenalty) : Math.round(awayPenalty);
+        const rowScore = arbResult.isArb ? 10 : calcRowScore(bestEdge, booksPresent.length, bookDisagreement, injPenalty);
+
         const cells = booksPresent.map(bookKey => {
           const d = bookData[bookKey];
           if (!d) return `<td class="odds-td empty">—</td>`;
 
           const isBest = d.price === bestPrice;
           const implied = decimalToImplied(americanToDecimal(d.price)).toFixed(1);
-          const edgeVs = trueProb ? (trueProb - parseFloat(implied)) : null;
-          const isGoodEdge = edgeVs !== null && edgeVs > 1;
           const isArb = arbResult.isArb && d.price === arbResult.bestPrices[outcomeName];
-          const score = isGoodEdge ? calcEdgeScore(edgeVs, booksPresent.length) : null;
 
-          if (isGoodEdge) rowHasEdge = true;
+          if (isBest && bestEdge > 1) rowHasEdge = true;
 
           let cellClass = 'odds-td';
           if (isArb) cellClass += ' arb-cell';
@@ -362,7 +406,6 @@ function renderGames(games, sport) {
             ${d.point !== undefined && d.point !== null ? `<div class="odds-point">${d.point>0?'+':''}${d.point}</div>` : ''}
             <div class="odds-val">${fmt(d.price)}</div>
             <div class="odds-implied">${implied}%</div>
-            ${score ? `<div class="ev-score-inline s${score}">${score}</div>` : (edgeVs !== null && edgeVs < 0 ? `<div class="odds-edge neg">${edgeVs.toFixed(1)}%</div>` : '')}
           </td>`;
         }).join('');
 
@@ -374,6 +417,9 @@ function renderGames(games, sport) {
             ${arbResult.isArb && oi===0 ? `<div class="arb-label">⬡ ARB +$${arbStakes.guaranteedProfit} on $100</div>` : ''}
           </td>
           ${cells}
+          <td class="score-td">
+            ${rowScore ? `<div class="ev-score s${rowScore}">${rowScore}</div>` : '<div class="ev-score-empty">—</div>'}
+          </td>
         `;
         tbody.appendChild(row);
       });
