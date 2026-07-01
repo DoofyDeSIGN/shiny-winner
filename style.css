@@ -1,0 +1,315 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f4f3f0;
+  --surface: #ffffff;
+  --surface-2: #f9f8f6;
+  --border: rgba(0,0,0,0.1);
+  --border-strong: rgba(0,0,0,0.18);
+  --text: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --green: #0ca30c;
+  --green-bg: #eaf3de;
+  --red: #d03b3b;
+  --red-bg: #fcebeb;
+  --blue: #2a78d6;
+  --blue-bg: #e6f1fb;
+  --radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111110;
+    --surface: #1a1a19;
+    --surface-2: #222221;
+    --border: rgba(255,255,255,0.1);
+    --border-strong: rgba(255,255,255,0.2);
+    --text: #f0ede8;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --green-bg: #173404;
+    --red-bg: #501313;
+    --blue-bg: #042c53;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.control-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+select, input {
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+select:focus, input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg);
+}
+
+button {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  align-self: flex-end;
+}
+
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.api-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 1rem;
+}
+
+.status-msg {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 0.5px solid var(--border);
+}
+
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.game-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.game-teams {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.game-sport {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.game-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.outcome-section {
+  margin-bottom: 1rem;
+}
+
+.outcome-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.book-row {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.book-row.best-line {
+  border-color: var(--green);
+  border-width: 1.5px;
+}
+
+.best-tag {
+  font-size: 10px;
+  color: var(--green);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.book-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: capitalize;
+}
+
+.book-odds {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.odd-chip {
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--text);
+}
+
+.odd-chip.muted {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.ev-calc {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-top: 4px;
+}
+
+.ev-calc-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.ev-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 500px) {
+  .ev-inputs { grid-template-columns: 1fr 1fr; }
+}
+
+.ev-inputs label {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.ev-inputs input,
+.ev-inputs select {
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+.ev-result {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 28px;
+}
+
+.ev-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+}
+
+.ev-pos { background: var(--green-bg); color: var(--green); }
+.ev-neg { background: var(--red-bg); color: var(--red); }
+.ev-neutral { background: var(--surface); color: var(--text-secondary); border: 0.5px solid var(--border); }
+
+.divider {
+  height: 0.5px;
+  background: var(--border);
+  margin: 1rem 0;
+}
+
+footer {
+  margin-top: 2rem;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
