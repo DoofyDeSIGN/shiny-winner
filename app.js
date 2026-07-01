@@ -1,9 +1,49 @@
 const ODDS_KEY = '53374f8933fdc16b45facdb194c56298';
 const CLEAR_KEY = 'sk_live_Bsj-nITf7h_brX-IKkw_9Vk0f9tjtsoDMtul211zzq8';
 const PROPLINE_KEY = '8554d857fc2b136c18a1239835727fa0';
-const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada','pinnacle','betfair_ex_eu'];
+
+// ── LOGO HELPERS ──────────────────────────────────────────────────────────────
+const BOOK_LOGOS = {
+  draftkings: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/DraftKings_logo.svg/200px-DraftKings_logo.svg.png',
+  fanduel: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/FanDuel_logo.svg/200px-FanDuel_logo.svg.png',
+  betmgm: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/BetMGM_logo.svg/200px-BetMGM_logo.svg.png',
+  caesars: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Caesars_Entertainment_logo.svg/200px-Caesars_Entertainment_logo.svg.png',
+  bovada: null,
+  barstool: null,
+  pointsbet: null,
+  williamhill: null,
+};
+
+function bookLogoHTML(bookKey) {
+  const name = cleanBook(bookKey);
+  const shortName = name.split(' ')[0].substring(0,2).toUpperCase();
+  // Use colored initials as fallback — clean and consistent
+  const colors = {
+    draftkings: '#1a7a43', fanduel: '#1493ff', betmgm: '#c8963e',
+    caesars: '#0033a0', bovada: '#e8a020', barstool: '#000000',
+    pointsbet: '#e30613', williamhill: '#009f6b'
+  };
+  const bg = colors[bookKey] || '#64748b';
+  return `<div class="book-logo-placeholder" style="background:${bg};color:white;font-size:9px">${shortName}</div>`;
+}
+
+function teamLogoHTML(teamName, sport) {
+  // ESPN team logo lookup via abbreviation
+  // Use initials as fallback styled nicely
+  const initials = teamName.split(' ').map(w=>w[0]).join('').substring(0,3).toUpperCase();
+  const colors = [
+    '#e63946','#2a9d8f','#e9c46a','#264653','#f4a261',
+    '#457b9d','#1d3557','#a8dadc','#6d4c41','#37474f'
+  ];
+  const colorIndex = teamName.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % colors.length;
+  const bg = colors[colorIndex];
+  return `<div class="team-logo-placeholder" style="background:${bg};color:white">${initials}</div>`;
+}
+
+
+const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada'];
 const SHARP_BOOKS = ['draftkings','fanduel'];
-const SOCCER_SHARP_BOOKS = ['pinnacle','betfair_ex_eu','draftkings','fanduel'];
+const SOCCER_SHARP_BOOKS = ['draftkings','fanduel','betmgm','bovada'];
 const MARKETS = ['h2h','spreads','totals'];
 
 function americanToDecimal(p) { return p > 0 ? (p/100)+1 : (100/Math.abs(p))+1; }
@@ -194,17 +234,43 @@ async function fetchOdds() {
 }
 
 function buildOddsMap(game) {
-  const map = { h2h:{}, spreads:{}, totals:{} };
+  const raw = { h2h:{}, spreads:{}, totals:{} };
   game.bookmakers.forEach(bm => {
     bm.markets.forEach(mk => {
-      if (!map[mk.key]) return;
+      if (!raw[mk.key]) return;
       mk.outcomes.forEach(o => {
-        if (!map[mk.key][o.name]) map[mk.key][o.name] = {};
-        map[mk.key][o.name][bm.key] = { price: o.price, point: o.point };
+        if (!raw[mk.key][o.name]) raw[mk.key][o.name] = {};
+        raw[mk.key][o.name][bm.key] = { price: o.price, point: o.point };
       });
     });
   });
-  return map;
+
+  // For spreads and totals: only keep books that agree on the most common line number
+  ['spreads','totals'].forEach(mkt => {
+    Object.keys(raw[mkt]).forEach(outcomeName => {
+      const bookData = raw[mkt][outcomeName];
+      // Count how many books post each point value
+      const pointCounts = {};
+      Object.values(bookData).forEach(d => {
+        const pt = d.point;
+        if (pt === undefined || pt === null) return;
+        pointCounts[pt] = (pointCounts[pt] || 0) + 1;
+      });
+      if (!Object.keys(pointCounts).length) return;
+      // Find the most common point value
+      const consensusPoint = Object.entries(pointCounts)
+        .sort((a,b) => b[1]-a[1])[0][0];
+      // Remove books that don't match the consensus point
+      Object.keys(bookData).forEach(book => {
+        const pt = bookData[book].point;
+        if (pt === undefined || pt === null || String(pt) !== String(consensusPoint)) {
+          delete bookData[book];
+        }
+      });
+    });
+  });
+
+  return raw;
 }
 
 function renderGames(games) {
@@ -307,20 +373,27 @@ function renderGames(games) {
     card.innerHTML = `
       <div class="game-header">
         <div class="game-matchup">
-          <div class="team-line">
-            <span class="team-name${awayLeading?' leading':''}">${game.away_team}</span>
-            ${injBadge(awayPenalty)}
-            ${awayScore !== undefined ? `<span class="team-score${awayLeading?' leading':''}">${awayScore}</span>` : ''}
+          <div class="teams-block">
+            <div class="team-line">
+              ${teamLogoHTML(game.away_team, sport)}
+              <span class="team-name${awayLeading?' leading':''}">${game.away_team}</span>
+              ${injBadge(awayPenalty)}
+              ${awayScore !== undefined ? `<span class="team-score${awayLeading?' leading':''}">${awayScore}</span>` : ''}
+            </div>
+            <div class="team-line">
+              ${teamLogoHTML(game.home_team, sport)}
+              <span class="team-name${homeLeading?' leading':''}">${game.home_team}</span>
+              ${injBadge(homePenalty)}
+              ${homeScore !== undefined ? `<span class="team-score${homeLeading?' leading':''}">${homeScore}</span>` : ''}
+            </div>
           </div>
-          <div class="team-line">
-            <span class="team-name${homeLeading?' leading':''}">${game.home_team}</span>
-            ${injBadge(homePenalty)}
-            ${homeScore !== undefined ? `<span class="team-score${homeLeading?' leading':''}">${homeScore}</span>` : ''}
+          <div class="vs-divider"></div>
+          <div class="game-meta">
+            <div class="game-sport">${game.sport_title}</div>
           </div>
-          <div class="game-sport">${game.sport_title}</div>
         </div>
         <div class="game-status-block">
-          ${isLive ? '<div class="live-badge">LIVE</div>' : ''}
+          ${isLive ? '<div class="live-badge">● LIVE</div>' : ''}
           <div class="game-time">${formatTime(game.commence_time)}</div>
         </div>
       </div>
@@ -334,7 +407,7 @@ function renderGames(games) {
 
     table.innerHTML = `<thead><tr>
       <th class="market-th">Bet</th>
-      ${allBooks.map(b=>`<th class="book-th">${cleanBook(b)}</th>`).join('')}
+      ${allBooks.map(b=>`<th class="book-th"><div class="book-header">${bookLogoHTML(b)}<span class="book-label">${cleanBook(b)}</span></div></th>`).join('')}
       <th class="score-th">Score</th>
     </tr></thead>`;
 
@@ -397,11 +470,11 @@ function renderGames(games) {
 }
 
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
-function switchTab(tab) {
+function switchTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-lines').style.display = tab === 'lines' ? 'block' : 'none';
   document.getElementById('tab-props').style.display = tab === 'props' ? 'block' : 'none';
-  event.target.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // ── PROP LINE SPORT MAP ───────────────────────────────────────────────────────
@@ -595,7 +668,7 @@ function renderProps(games) {
 
     table.innerHTML = `<thead><tr>
       <th class="market-th">Player / Prop</th>
-      ${allBooks.map(b=>`<th class="book-th">${cleanBook(b)}</th>`).join('')}
+      ${allBooks.map(b=>`<th class="book-th"><div class="book-header">${bookLogoHTML(b)}<span class="book-label">${cleanBook(b)}</span></div></th>`).join('')}
       <th class="score-th">Score</th>
     </tr></thead>`;
 

@@ -3,15 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EV Betting Tool</title>
+  <title>EdgeFinder — EV Betting Tool</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <header>
       <div class="header-left">
-        <h1>EV Betting Tool</h1>
-        <p class="subtitle">Automated edge detection · sharp consensus · injury adjusted</p>
+        <div class="logo-mark">EF</div>
+        <div>
+          <h1>EdgeFinder</h1>
+          <p class="subtitle">Automated edge detection · sharp consensus · arbitrage alerts</p>
+        </div>
       </div>
       <div class="header-controls">
         <div class="control-group">
@@ -37,23 +40,24 @@
             <option value="5">5+</option>
           </select>
         </div>
-        <button id="fetch-btn" onclick="fetchAll()">Fetch odds</button>
+        <button class="fetch-btn" id="fetch-btn" onclick="fetchAll()">Fetch odds</button>
       </div>
     </header>
 
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('lines')">Game Lines</button>
-      <button class="tab" onclick="switchTab('props')">Player Props</button>
+      <button class="tab active" onclick="switchTab('lines', this)">Game Lines</button>
+      <button class="tab" onclick="switchTab('props', this)">Player Props</button>
     </div>
 
     <div id="api-remaining" class="api-note" style="display:none;"></div>
 
     <div id="tab-lines">
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Green = best line</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> True % = sharp consensus (vig removed)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#9333ea"></div> Purple = arbitrage opportunity</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> INJ = key player out</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Green = best available line</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> True % = sharp consensus probability</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Purple = arbitrage — guaranteed profit</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> INJ = key player out &nbsp;·&nbsp; Q = questionable</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Score 1–10 = edge strength</div>
       </div>
       <div id="games-container">
         <p class="status-msg">Select a sport and fetch odds — edges and arbs appear automatically.</p>
@@ -62,9 +66,8 @@
 
     <div id="tab-props" style="display:none;">
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Green score = strong edge vs sharp consensus</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#9333ea"></div> Purple = arbitrage across books</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Best line highlighted per prop</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Green = best line for that prop</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Purple = prop arbitrage opportunity</div>
       </div>
       <div id="props-container">
         <p class="status-msg">Fetch odds to load player props for today's games.</p>
