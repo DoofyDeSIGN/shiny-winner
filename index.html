@@ -9,39 +9,40 @@
 <body>
   <div class="container">
     <header>
-      <h1>EV Betting Tool</h1>
-      <p class="subtitle">Live odds · all markets · best line highlighted</p>
+      <div class="header-left">
+        <h1>EV Betting Tool</h1>
+        <p class="subtitle">Live odds · all markets · EV rated 1–10</p>
+      </div>
+      <div class="header-controls">
+        <div class="control-group">
+          <label for="sport-sel">Sport</label>
+          <select id="sport-sel">
+            <option value="americanfootball_nfl">NFL</option>
+            <option value="americanfootball_ncaaf">NCAA Football</option>
+            <option value="basketball_nba">NBA</option>
+            <option value="basketball_ncaab">NCAA Basketball</option>
+            <option value="baseball_mlb" selected>MLB</option>
+            <option value="icehockey_nhl">NHL</option>
+            <option value="soccer_epl">Soccer — EPL</option>
+            <option value="soccer_uefa_champs_league">Soccer — UCL</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="min-books">Min books</label>
+          <select id="min-books">
+            <option value="1">Any</option>
+            <option value="2">2+</option>
+            <option value="3" selected>3+</option>
+            <option value="5">5+</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="stake-global">Stake ($)</label>
+          <input type="number" id="stake-global" value="100" min="1" style="width:80px" />
+        </div>
+        <button id="fetch-btn" onclick="fetchOdds()">Fetch odds</button>
+      </div>
     </header>
-
-    <div class="controls">
-      <div class="control-group">
-        <label for="sport-sel">Sport</label>
-        <select id="sport-sel">
-          <option value="americanfootball_nfl">NFL</option>
-          <option value="americanfootball_ncaaf">NCAA Football</option>
-          <option value="basketball_nba">NBA</option>
-          <option value="basketball_ncaab">NCAA Basketball</option>
-          <option value="baseball_mlb">MLB</option>
-          <option value="icehockey_nhl">NHL</option>
-          <option value="soccer_epl">Soccer — EPL</option>
-          <option value="soccer_uefa_champs_league">Soccer — Champions League</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label for="min-books">Min books</label>
-        <select id="min-books">
-          <option value="1">Show all</option>
-          <option value="2">2+ books</option>
-          <option value="3" selected>3+ books</option>
-          <option value="5">5+ books</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label for="stake-global">Default stake ($)</label>
-        <input type="number" id="stake-global" value="100" min="1" />
-      </div>
-      <button id="fetch-btn" onclick="fetchOdds()">Fetch live odds</button>
-    </div>
 
     <div id="api-remaining" class="api-note" style="display:none;"></div>
     <div id="games-container">
