@@ -342,3 +342,84 @@ select:focus, input:focus { border-color: var(--blue); background: white; }
 /* ── ARB ROW ── */
 .arb-row td { background: #faf5ff !important; }
 .arb-row .market-td { border-left: 3px solid var(--purple); }
+
+/* ── GAME HEADER ── */
+.game-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.teams-col { display: flex; flex-direction: column; gap: 0; }
+.team-row { display: flex; align-items: center; gap: 10px; }
+.game-right { text-align: right; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+
+/* ── TEAM & BOOK BADGES ── */
+.team-badge {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: white;
+  flex-shrink: 0; font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+.book-badge {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; color: white;
+  margin: 0 auto 3px; font-family: 'Barlow Condensed', sans-serif;
+}
+.book-th {
+  text-align: center; padding: 8px 6px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.book-label {
+  display: block; font-size: 9px; font-weight: 700;
+  color: var(--text-secondary); text-transform: capitalize;
+  text-align: center;
+}
+
+/* ── ODDS CELLS ── */
+.odds-td { text-align: center; padding: 9px 6px; min-width: 85px; vertical-align: middle; }
+.odds-td.empty { color: var(--text-muted); font-size: 13px; }
+.odds-td.best-cell { background: var(--green-light); outline: 2px solid var(--green); outline-offset: -2px; border-radius: 4px; }
+.odds-td.arb-cell { background: var(--purple-light); outline: 2px solid var(--purple); outline-offset: -2px; border-radius: 4px; }
+
+.arb-row td { background: #fdf4ff; }
+.arb-market { border-left: 3px solid var(--purple) !important; }
+
+.odds-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 19px; font-weight: 800; color: var(--text);
+}
+.best-cell .odds-val { color: var(--green); }
+.arb-cell .odds-val { color: var(--purple); }
+.odds-point { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 1px; }
+.odds-implied { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-top: 1px; }
+.odds-edge { font-size: 10px; font-weight: 700; margin-top: 2px; }
+.odds-edge.pos { color: var(--green); }
+.odds-edge.neg { color: var(--red); }
+
+/* Inline EV score */
+.ev-score-inline {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 5px;
+  font-size: 11px; font-weight: 800; margin-top: 3px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.ev-score-inline.s1,.ev-score-inline.s2 { background:#fee2e2;color:#dc2626; }
+.ev-score-inline.s3,.ev-score-inline.s4 { background:#fef3c7;color:#d97706; }
+.ev-score-inline.s5,.ev-score-inline.s6 { background:#dcfce7;color:#16a34a; }
+.ev-score-inline.s7,.ev-score-inline.s8 { background:#bbf7d0;color:#15803d; }
+.ev-score-inline.s9,.ev-score-inline.s10 { background:#4ade80;color:#14532d; }
+
+/* ARB label */
+.arb-label { font-size: 11px; font-weight: 700; color: var(--purple); margin-top: 4px; }
+
+/* Prop section header */
+.prop-section-header {
+  padding: 7px 20px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted); background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
