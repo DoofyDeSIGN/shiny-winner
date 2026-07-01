@@ -55,20 +55,31 @@ function getSharpConsensus(outcomeBookMap, outcomeNames) {
 }
 
 // Check arbitrage: for each outcome, find its best price across all books
-// If sum of implied probs < 100, it's arb
+// If sum of implied probs < 100 AND all outcomes share the same point value, it's arb
 function checkArbitrage(outcomeNames, outcomeBookMap) {
   const bestPrices = {};
   const bestBooks = {};
+  const bestPoints = {};
   outcomeNames.forEach(name => {
     const bookData = outcomeBookMap[name] || {};
     let best = -Infinity;
     let bestBook = null;
+    let bestPoint = null;
     Object.entries(bookData).forEach(([book, d]) => {
-      if (d.price > best) { best = d.price; bestBook = book; }
+      if (d.price > best) { best = d.price; bestBook = book; bestPoint = d.point; }
     });
     bestPrices[name] = best;
     bestBooks[name] = bestBook;
+    bestPoints[name] = bestPoint;
   });
+
+  // For totals/spreads: only flag arb if the line numbers match across outcomes
+  const points = outcomeNames.map(n => bestPoints[n]).filter(p => p !== undefined && p !== null);
+  if (points.length >= 2) {
+    const absPoints = points.map(p => Math.abs(p));
+    const allMatch = absPoints.every(p => p === absPoints[0]);
+    if (!allMatch) return { isArb: false, profit: null, bestPrices, bestBooks };
+  }
 
   const impliedSum = outcomeNames.reduce((sum, name) => {
     return sum + (bestPrices[name] > -Infinity ? decimalToImplied(americanToDecimal(bestPrices[name])) : 100);
@@ -523,20 +534,31 @@ function renderProps(games) {
         const bestImplied = decimalToImplied(americanToDecimal(bestPrice));
         const edgePct = avgImplied - bestImplied;
 
-        // Check arb: over + under
+        // Check arb: over + under must be on the SAME point value
         const overBooks = Object.entries(bookData).filter(([,d]) => d.name === 'Over');
         const underBooks = Object.entries(bookData).filter(([,d]) => d.name === 'Under');
         let isArb = false;
         let arbProfit = null;
 
         if (overBooks.length && underBooks.length) {
-          const bestOver = Math.max(...overBooks.map(([,d])=>d.price));
-          const bestUnder = Math.max(...underBooks.map(([,d])=>d.price));
-          const impliedSum = decimalToImplied(americanToDecimal(bestOver)) + decimalToImplied(americanToDecimal(bestUnder));
-          if (impliedSum < 100) {
-            isArb = true;
-            arbProfit = (100 - impliedSum).toFixed(2);
-            totalArbs++;
+          // Find best over and best under ON THE SAME LINE
+          let bestOver = -Infinity, bestUnder = -Infinity;
+          overBooks.forEach(([,od]) => {
+            underBooks.forEach(([,ud]) => {
+              // Same point = true arb candidate
+              if (od.point !== undefined && ud.point !== undefined && od.point === ud.point) {
+                if (od.price > bestOver) bestOver = od.price;
+                if (ud.price > bestUnder) bestUnder = ud.price;
+              }
+            });
+          });
+          if (bestOver > -Infinity && bestUnder > -Infinity) {
+            const impliedSum = decimalToImplied(americanToDecimal(bestOver)) + decimalToImplied(americanToDecimal(bestUnder));
+            if (impliedSum < 100) {
+              isArb = true;
+              arbProfit = (100 - impliedSum).toFixed(2);
+              totalArbs++;
+            }
           }
         }
 
