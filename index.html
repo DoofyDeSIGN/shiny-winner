@@ -11,7 +11,7 @@
     <header>
       <div class="header-left">
         <h1>EV Betting Tool</h1>
-        <p class="subtitle">Live odds · all markets · EV rated 1–10</p>
+        <p class="subtitle">Automated edge detection · sharp consensus · injury adjusted</p>
       </div>
       <div class="header-controls">
         <div class="control-group">
@@ -36,17 +36,20 @@
             <option value="5">5+</option>
           </select>
         </div>
-        <div class="control-group">
-          <label for="stake-global">Stake ($)</label>
-          <input type="number" id="stake-global" value="100" min="1" style="width:80px" />
-        </div>
         <button id="fetch-btn" onclick="fetchOdds()">Fetch odds</button>
       </div>
     </header>
 
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Green cell = best available line</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> True % = sharp consensus probability (vig removed)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> INJ = key player out &nbsp;|&nbsp; Q = questionable</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> EV Score 1–10: how strong the edge is vs sharp books</div>
+    </div>
+
     <div id="api-remaining" class="api-note" style="display:none;"></div>
     <div id="games-container">
-      <p class="status-msg">Select a sport and fetch live odds to get started.</p>
+      <p class="status-msg">Select a sport and fetch odds — the tool does the rest automatically.</p>
     </div>
   </div>
   <script src="app.js"></script>

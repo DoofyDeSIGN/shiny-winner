@@ -6,7 +6,7 @@
   --surface-2: #1e1e1e;
   --surface-3: #252525;
   --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.11);
+  --border-strong: rgba(255,255,255,0.12);
   --text: #efefef;
   --text-secondary: #999;
   --text-muted: #555;
@@ -32,47 +32,30 @@ body {
 .container { max-width: 1200px; margin: 0 auto; }
 
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 1.25rem;
-  background: var(--surface);
-  border: 0.5px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 12px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem;
+  background: var(--surface); border: 0.5px solid var(--border-strong);
+  border-radius: 10px; padding: 12px 16px;
 }
-
-.header-left h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.header-left h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 .subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
 .header-controls { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .control-group { display: flex; flex-direction: column; gap: 3px; }
 .control-group label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
 select, input {
-  font-size: 12px;
-  padding: 6px 8px;
+  font-size: 12px; padding: 6px 8px;
   border: 0.5px solid var(--border-strong);
   border-radius: var(--radius);
-  background: var(--surface-2);
-  color: var(--text);
-  outline: none;
+  background: var(--surface-2); color: var(--text); outline: none;
 }
 select:focus, input:focus { border-color: var(--blue); }
 
 button {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 7px 16px;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--blue);
-  color: #fff;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  align-self: flex-end;
+  font-size: 12px; font-weight: 700; padding: 7px 18px;
+  border: none; border-radius: var(--radius);
+  background: var(--blue); color: #fff;
+  cursor: pointer; transition: opacity 0.15s; align-self: flex-end;
 }
 button:hover { opacity: 0.85; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -91,173 +74,127 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   border: 0.5px solid var(--border);
 }
 
-.games-list { display: flex; flex-direction: column; gap: 12px; }
+.games-list { display: flex; flex-direction: column; gap: 14px; }
 
-/* ── GAME CARD ── */
 .game-card {
   background: var(--surface);
   border: 0.5px solid var(--border-strong);
-  border-radius: 10px;
-  overflow: hidden;
+  border-radius: 10px; overflow: hidden;
 }
 
-/* ── GAME HEADER ── */
+/* HEADER */
 .game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: flex; justify-content: space-between; align-items: flex-start;
   padding: 12px 16px 10px;
   background: var(--surface-2);
   border-bottom: 0.5px solid var(--border-strong);
   gap: 16px;
 }
-
 .game-matchup { flex: 1; }
-
-.team-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 0;
-}
-
-.team-name { font-size: 13px; font-weight: 600; color: var(--text); min-width: 160px; }
-.team-score {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  min-width: 24px;
-  text-align: right;
-}
+.team-line { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.team-name { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.team-name.leading { color: var(--text); }
+.team-score { font-size: 16px; font-weight: 800; color: var(--text-secondary); min-width: 20px; }
 .team-score.leading { color: var(--green); }
-
 .game-sport { font-size: 10px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-
 .game-status-block { text-align: right; }
-.game-time { font-size: 11px; color: var(--text-muted); }
 .live-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--red);
-  border: 0.5px solid var(--red-border);
-  background: var(--red-bg);
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
+  display: inline-block; font-size: 10px; font-weight: 800;
+  color: var(--red); border: 0.5px solid var(--red-border);
+  background: var(--red-bg); padding: 2px 7px; border-radius: 3px;
+  letter-spacing: 0.06em; margin-bottom: 4px;
 }
-.game-period {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
+.game-time { font-size: 11px; color: var(--text-muted); }
 
-/* ── ODDS TABLE ── */
+/* Injury badges */
+.inj-badge {
+  font-size: 9px; font-weight: 800; padding: 1px 5px;
+  border-radius: 3px; letter-spacing: 0.05em;
+}
+.inj-out { background: var(--red-bg); color: var(--red); border: 0.5px solid var(--red-border); }
+.inj-q { background: rgba(245,158,11,0.12); color: var(--yellow); border: 0.5px solid rgba(245,158,11,0.3); }
+
+/* TABLE */
 .odds-table { width: 100%; border-collapse: collapse; }
 
-.odds-table th {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 7px 12px;
-  text-align: center;
+.odds-table thead th {
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 7px 10px; text-align: center;
   background: var(--surface-3);
   border-bottom: 0.5px solid var(--border-strong);
 }
-.odds-table th.market-th { text-align: left; padding-left: 16px; }
-.odds-table th.best-book-th { color: var(--green); }
+.odds-table thead th.market-th { text-align: left; padding-left: 16px; }
+.odds-table thead th.score-th { color: var(--blue); }
 
 .odds-table td {
-  padding: 0;
   border-bottom: 0.5px solid var(--border);
   border-right: 0.5px solid var(--border);
-  vertical-align: top;
 }
 .odds-table td:last-child { border-right: none; }
 .odds-table tr:last-child td { border-bottom: none; }
 
-/* market label cell */
 .market-td {
-  padding: 10px 16px;
-  min-width: 130px;
-  vertical-align: middle;
+  padding: 10px 16px; min-width: 130px; vertical-align: middle;
 }
-.market-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.market-name { font-size: 11px; color: var(--text); }
 .market-side { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.true-prob { font-size: 10px; color: var(--blue); margin-top: 3px; opacity: 0.8; }
 
-/* odds data cell */
 .odds-td {
-  text-align: center;
-  padding: 8px 6px;
-  min-width: 90px;
+  text-align: center; padding: 8px 6px; min-width: 88px;
   vertical-align: top;
 }
-.odds-td.best { background: var(--green-bg); }
 .odds-td.empty { color: var(--text-muted); font-size: 12px; vertical-align: middle; padding: 14px 0; }
+.odds-td.best { background: var(--green-bg); }
+.odds-td.edge { border-top: 1.5px solid var(--green); }
 
 .odds-point { font-size: 11px; color: var(--text-secondary); margin-bottom: 1px; }
 .odds-val { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
 .odds-td.best .odds-val { color: var(--green); }
 .odds-implied { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-.odds-td.best .odds-implied { color: var(--green); opacity: 0.65; }
+.odds-edge { font-size: 10px; font-weight: 600; margin-top: 3px; }
+.odds-edge.pos { color: var(--green); }
+.odds-edge.neg { color: var(--red); }
 
-/* EV score row */
-.ev-row td { background: var(--surface-3); border-bottom: 0.5px solid var(--border-strong); padding: 6px 8px; }
-.ev-row .market-td { padding: 6px 16px; }
-.ev-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+/* EV SCORE COLUMN */
+.score-td { text-align: center; vertical-align: middle; padding: 6px; min-width: 60px; }
 
-.ev-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.ev-cell input {
-  width: 100%;
-  font-size: 12px;
-  padding: 4px 6px;
-  text-align: center;
-  background: var(--surface-2);
-  border: 0.5px solid var(--border-strong);
-  border-radius: 4px;
-  color: var(--text);
-}
-
-/* EV score badge 1-10 */
 .ev-score {
-  font-size: 11px;
-  font-weight: 700;
-  width: 28px;
-  height: 20px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px; height: 36px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; margin: 0 auto;
 }
-.ev-score.s1  { background: #7f1d1d; color: #fca5a5; }
-.ev-score.s2  { background: #7f1d1d; color: #fca5a5; }
-.ev-score.s3  { background: #92400e; color: #fcd34d; }
-.ev-score.s4  { background: #78350f; color: #fde68a; }
-.ev-score.s5  { background: #365314; color: #bef264; }
-.ev-score.s6  { background: #14532d; color: #86efac; }
-.ev-score.s7  { background: #14532d; color: #4ade80; }
-.ev-score.s8  { background: #052e16; color: #22c55e; }
-.ev-score.s9  { background: #052e16; color: #16a34a; }
-.ev-score.s10 { background: #052e16; color: #15803d; }
+.ev-score-empty { font-size: 12px; color: var(--text-muted); }
 
-/* section divider between market groups */
+.ev-score.s1  { background:#450a0a; color:#fca5a5; }
+.ev-score.s2  { background:#7f1d1d; color:#fca5a5; }
+.ev-score.s3  { background:#92400e; color:#fde68a; }
+.ev-score.s4  { background:#78350f; color:#fde68a; }
+.ev-score.s5  { background:#3f6212; color:#d9f99d; }
+.ev-score.s6  { background:#365314; color:#bef264; }
+.ev-score.s7  { background:#14532d; color:#86efac; }
+.ev-score.s8  { background:#14532d; color:#4ade80; }
+.ev-score.s9  { background:#052e16; color:#22c55e; }
+.ev-score.s10 { background:#052e16; color:#16a34a; border: 1.5px solid #16a34a; }
+
+/* SECTION DIVIDER */
 .section-divider td {
-  background: var(--surface-3);
-  padding: 3px 16px;
+  background: var(--surface-3); padding: 4px 16px;
   border-bottom: 0.5px solid var(--border-strong);
 }
 .section-divider-label {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
 }
+
+/* Legend */
+.legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 11px; color: var(--text-muted);
+  margin-bottom: 1rem; padding: 8px 12px;
+  background: var(--surface); border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
