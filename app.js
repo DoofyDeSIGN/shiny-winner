@@ -224,7 +224,7 @@ async function fetchOdds() {
       container.innerHTML = '<p class="status-msg">No games found. Try lowering the min books filter.</p>';
       return;
     }
-    renderGames(filtered);
+    renderGames(filtered, sport);
   } catch(e) {
     container.innerHTML = `<p class="status-msg">Could not load odds: ${e.message}</p>`;
   } finally {
@@ -273,7 +273,7 @@ function buildOddsMap(game) {
   return raw;
 }
 
-function renderGames(games) {
+function renderGames(games, sport) {
   const container = document.getElementById('games-container');
   container.innerHTML = '';
 
@@ -375,13 +375,13 @@ function renderGames(games) {
         <div class="game-matchup">
           <div class="teams-block">
             <div class="team-line">
-              ${teamLogoHTML(game.away_team, sport)}
+              ${teamLogoHTML(game.away_team)}
               <span class="team-name${awayLeading?' leading':''}">${game.away_team}</span>
               ${injBadge(awayPenalty)}
               ${awayScore !== undefined ? `<span class="team-score${awayLeading?' leading':''}">${awayScore}</span>` : ''}
             </div>
             <div class="team-line">
-              ${teamLogoHTML(game.home_team, sport)}
+              ${teamLogoHTML(game.home_team)}
               <span class="team-name${homeLeading?' leading':''}">${game.home_team}</span>
               ${injBadge(homePenalty)}
               ${homeScore !== undefined ? `<span class="team-score${homeLeading?' leading':''}">${homeScore}</span>` : ''}
