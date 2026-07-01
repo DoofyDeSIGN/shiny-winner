@@ -194,6 +194,15 @@ function checkArbitrage(outcomeNames, outcomeBookMap) {
     });
     bestPrices[name] = best; bestBooks[name] = bestBook; bestPoints[name] = bestPoint;
   });
+
+  // Sanity check: if any best price implies < 4% or > 96%, it is a live blowout
+  // line that is unreliable — skip arb detection entirely
+  for (const name of outcomeNames) {
+    if (bestPrices[name] <= -Infinity) continue;
+    const implied = decimalToImplied(americanToDecimal(bestPrices[name]));
+    if (implied < 4 || implied > 96) return { isArb: false, profit: null, bestPrices, bestBooks };
+  }
+
   const points = outcomeNames.map(n => bestPoints[n]).filter(p => p !== undefined && p !== null);
   if (points.length >= 2) {
     const absPoints = points.map(p => Math.abs(p));
