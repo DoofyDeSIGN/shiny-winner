@@ -462,7 +462,7 @@ async function fetchProps(sport) {
     }
 
     if (!propsData.length) {
-      container.innerHTML = '<p class="status-msg">No player props posted yet for today's games.</p>';
+      container.innerHTML = '<p class="status-msg">No player props posted yet for today.</p>';
       return;
     }
     renderProps(propsData);
