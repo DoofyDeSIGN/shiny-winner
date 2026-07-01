@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <h1>EV Betting Tool</h1>
-      <p class="subtitle">Live odds across books + your probability model</p>
+      <p class="subtitle">Live odds · all markets · best line highlighted</p>
     </header>
 
     <div class="controls">
@@ -28,22 +28,26 @@
         </select>
       </div>
       <div class="control-group">
-        <label for="market-sel">Market</label>
-        <select id="market-sel">
-          <option value="h2h">Moneyline</option>
-          <option value="spreads">Spread</option>
-          <option value="totals">Over/Under</option>
+        <label for="min-books">Min books</label>
+        <select id="min-books">
+          <option value="1">Show all</option>
+          <option value="2">2+ books</option>
+          <option value="3" selected>3+ books</option>
+          <option value="5">5+ books</option>
         </select>
+      </div>
+      <div class="control-group">
+        <label for="stake-global">Default stake ($)</label>
+        <input type="number" id="stake-global" value="100" min="1" />
       </div>
       <button id="fetch-btn" onclick="fetchOdds()">Fetch live odds</button>
     </div>
 
     <div id="api-remaining" class="api-note" style="display:none;"></div>
     <div id="games-container">
-      <p class="status-msg">Select a sport and market, then fetch live odds.</p>
+      <p class="status-msg">Select a sport and fetch live odds to get started.</p>
     </div>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
