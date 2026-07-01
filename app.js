@@ -65,14 +65,69 @@ function getESPNSport(sport) {
   return null;
 }
 
+// Direct logo URLs from Wikipedia/Wikimedia commons — CORS open, reliable
+const TEAM_LOGO_URLS = {
+  // MLB
+  'New York Yankees': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/New_York_Yankees_logo.svg/120px-New_York_Yankees_logo.svg.png',
+  'Boston Red Sox': 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/RedSoxPrimary_HangingSocks.svg/120px-RedSoxPrimary_HangingSocks.svg.png',
+  'Los Angeles Dodgers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Los_Angeles_Dodgers_Logo.svg/120px-Los_Angeles_Dodgers_Logo.svg.png',
+  'Chicago Cubs': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/ChicagoCubs_logo.svg/120px-ChicagoCubs_logo.svg.png',
+  'Houston Astros': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Houston-Astros-Logo.svg/120px-Houston-Astros-Logo.svg.png',
+  'Atlanta Braves': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Atlanta_Braves.svg/120px-Atlanta_Braves.svg.png',
+  'New York Mets': 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/New_York_Mets.svg/120px-New_York_Mets.svg.png',
+  'Philadelphia Phillies': 'https://upload.wikimedia.org/wikipedia/en/thumb/5/54/Philadelphia_Phillies_logo.svg/120px-Philadelphia_Phillies_logo.svg.png',
+  'San Diego Padres': 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7d/San_Diego_Padres_logo.svg/120px-San_Diego_Padres_logo.svg.png',
+  'San Francisco Giants': 'https://upload.wikimedia.org/wikipedia/en/thumb/6/63/Giants_Logo.svg/120px-Giants_Logo.svg.png',
+  'St. Louis Cardinals': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9d/StLouisCardinals_cap_logo.svg/120px-StLouisCardinals_cap_logo.svg.png',
+  'Toronto Blue Jays': 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Toronto_Blue_Jays_Logo.svg/120px-Toronto_Blue_Jays_Logo.svg.png',
+  'Minnesota Twins': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Minnesota_Twins_logo.svg/120px-Minnesota_Twins_logo.svg.png',
+  'Cleveland Guardians': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Cleveland_Guardians_Logo.svg/120px-Cleveland_Guardians_Logo.svg.png',
+  'Chicago White Sox': 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c1/Chicago_White_Sox.svg/120px-Chicago_White_Sox.svg.png',
+  'Detroit Tigers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Detroit_Tigers_logo.svg/120px-Detroit_Tigers_logo.svg.png',
+  'Kansas City Royals': 'https://upload.wikimedia.org/wikipedia/en/thumb/1/1a/Kansas_City_Royals_logo.svg/120px-Kansas_City_Royals_logo.svg.png',
+  'Milwaukee Brewers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Milwaukee_Brewers_logo_%282020%29.svg/120px-Milwaukee_Brewers_logo_%282020%29.svg.png',
+  'Pittsburgh Pirates': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Pittsburgh_Pirates_logo.svg/120px-Pittsburgh_Pirates_logo.svg.png',
+  'Cincinnati Reds': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Cincinnati_Reds_Logo.svg/120px-Cincinnati_Reds_Logo.svg.png',
+  'Arizona Diamondbacks': 'https://upload.wikimedia.org/wikipedia/en/thumb/6/60/Arizona_Diamondbacks_logo.svg/120px-Arizona_Diamondbacks_logo.svg.png',
+  'Colorado Rockies': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/0a/Colorado_Rockies_logo.svg/120px-Colorado_Rockies_logo.svg.png',
+  'Los Angeles Angels': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Los_Angeles_Angels_of_Anaheim.svg/120px-Los_Angeles_Angels_of_Anaheim.svg.png',
+  'Seattle Mariners': 'https://upload.wikimedia.org/wikipedia/en/thumb/6/67/Seattle_Mariners_logo_%28low_res%29.svg/120px-Seattle_Mariners_logo_%28low_res%29.svg.png',
+  'Tampa Bay Rays': 'https://upload.wikimedia.org/wikipedia/en/thumb/3/35/Tampa_Bay_Rays_logo_%282019%29.svg/120px-Tampa_Bay_Rays_logo_%282019%29.svg.png',
+  'Texas Rangers': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Texas_Rangers.svg/120px-Texas_Rangers.svg.png',
+  'Miami Marlins': 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Miami_Marlins_Logo.svg/120px-Miami_Marlins_Logo.svg.png',
+  'Baltimore Orioles': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Baltimore_Orioles_cap_logo.svg/120px-Baltimore_Orioles_cap_logo.svg.png',
+  'Washington Nationals': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_logo.svg/120px-Washington_Nationals_logo.svg.png',
+  'Oakland Athletics': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Oakland_Athletics_SVG.svg/120px-Oakland_Athletics_SVG.svg.png',
+  // NBA
+  'Los Angeles Lakers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/120px-Los_Angeles_Lakers_logo.svg.png',
+  'Golden State Warriors': 'https://upload.wikimedia.org/wikipedia/en/thumb/0/01/Golden_State_Warriors_logo.svg/120px-Golden_State_Warriors_logo.svg.png',
+  'Boston Celtics': 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8b/Boston_Celtics.svg/120px-Boston_Celtics.svg.png',
+  'Miami Heat': 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fb/Miami_Heat_logo.svg/120px-Miami_Heat_logo.svg.png',
+  'Chicago Bulls': 'https://upload.wikimedia.org/wikipedia/en/thumb/6/67/Chicago_Bulls_logo.svg/120px-Chicago_Bulls_logo.svg.png',
+  'Milwaukee Bucks': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Milwaukee_Bucks_logo.svg/120px-Milwaukee_Bucks_logo.svg.png',
+  'Phoenix Suns': 'https://upload.wikimedia.org/wikipedia/en/thumb/d/dc/Phoenix_Suns_logo.svg/120px-Phoenix_Suns_logo.svg.png',
+  'Dallas Mavericks': 'https://upload.wikimedia.org/wikipedia/en/thumb/9/90/Dallas_Mavericks_logo.svg/120px-Dallas_Mavericks_logo.svg.png',
+  'Denver Nuggets': 'https://upload.wikimedia.org/wikipedia/en/thumb/7/76/Denver_Nuggets.svg/120px-Denver_Nuggets.svg.png',
+  'Philadelphia 76ers': 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/Philadelphia_76ers_logo.svg/120px-Philadelphia_76ers_logo.svg.png',
+  // NFL
+  'Kansas City Chiefs': 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/Kansas_City_Chiefs_logo.svg/120px-Kansas_City_Chiefs_logo.svg.png',
+  'San Francisco 49ers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/San_Francisco_49ers_logo.svg/120px-San_Francisco_49ers_logo.svg.png',
+  'Dallas Cowboys': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Dallas_Cowboys.svg/120px-Dallas_Cowboys.svg.png',
+  'Philadelphia Eagles': 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/Philadelphia_Eagles_logo.svg/120px-Philadelphia_Eagles_logo.svg.png',
+  'Buffalo Bills': 'https://upload.wikimedia.org/wikipedia/en/thumb/7/77/Buffalo_Bills_logo.svg/120px-Buffalo_Bills_logo.svg.png',
+  'Green Bay Packers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Green_Bay_Packers_logo.svg/120px-Green_Bay_Packers_logo.svg.png',
+  'New England Patriots': 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4f/New_England_Patriots_logo.svg/120px-New_England_Patriots_logo.svg.png',
+  'Baltimore Ravens': 'https://upload.wikimedia.org/wikipedia/en/thumb/1/16/Baltimore_Ravens_logo.svg/120px-Baltimore_Ravens_logo.svg.png',
+  'Pittsburgh Steelers': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Pittsburgh_Steelers_logo.svg/120px-Pittsburgh_Steelers_logo.svg.png',
+};
+
 function teamLogoHTML(teamName, sport) {
-  const espnSport = getESPNSport(sport);
-  const teamId = ESPN_TEAM_IDS[teamName];
   const initials = teamName.split(' ').map(w=>w[0]).join('').substring(0,3).toUpperCase();
   const palette = ['#e63946','#2a9d8f','#e9c46a','#264653','#f4a261','#457b9d','#1d3557','#6d4c41','#37474f','#5e35b1','#00897b','#d81b60'];
   const bg = palette[teamName.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%palette.length];
-  if (espnSport && teamId) {
-    return `<img class="team-logo" src="https://a.espncdn.com/i/teamlogos/${espnSport}/500/${teamId}.png" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="${teamName}"><div class="team-badge" style="display:none;background:${bg}">${initials}</div>`;
+  const logoUrl = TEAM_LOGO_URLS[teamName];
+  if (logoUrl) {
+    return `<img class="team-logo" src="${logoUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="${teamName}"><div class="team-badge" style="display:none;background:${bg}">${initials}</div>`;
   }
   return `<div class="team-badge" style="background:${bg}">${initials}</div>`;
 }
@@ -197,8 +252,8 @@ function getSharpPublicSignal(gameId, marketKey, outcomeName, bookData, allOutco
     signal = 'public'; confidence = 'medium';
   }
 
-  // Edge case: if only 1 sharp book and no soft books, not enough data
-  if (sharpPrices.length < 2 && softPrices.length === 0) {
+  // Edge case: need at least 1 sharp book to make any call
+  if (sharpPrices.length === 0) {
     signal = 'neutral'; confidence = 'low';
   }
 
