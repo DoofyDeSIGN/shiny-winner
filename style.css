@@ -234,3 +234,7 @@ select:focus,input:focus { border-color:var(--blue); }
   background: #dbeafe; color: #1e40af;
   border: 1px solid #93c5fd;
 }
+.sp-badge.neutral {
+  background: var(--surface-3); color: var(--text-muted);
+  border: 1px solid var(--border);
+}

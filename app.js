@@ -250,27 +250,31 @@ function getSharpPublicSignal(gameId, marketKey, outcomeName, bookData, allOutco
     signal = 'sharp'; confidence = 'medium';
   } else if (divergenceSignal === 'public' || movementSignal === 'public') {
     signal = 'public'; confidence = 'medium';
+  } else {
+    // Weak signal — use best available data to make a lean
+    // If sharp books have better odds than implied market avg = public side (books haven't moved)
+    // If sharp books have worse odds = sharp side (books already moved on sharp action)
+    const allPrices = Object.values(bookData).map(d=>d.price);
+    if (allPrices.length >= 2) {
+      const marketAvgImplied = allPrices.reduce((a,p)=>a+decimalToImplied(americanToDecimal(p)),0)/allPrices.length;
+      const sharpImplied = decimalToImplied(americanToDecimal(sharpAvg));
+      if (sharpImplied > marketAvgImplied + 1) { signal = 'sharp'; confidence = 'low'; }
+      else if (sharpImplied < marketAvgImplied - 1) { signal = 'public'; confidence = 'low'; }
+    }
   }
 
-  // Edge case: need at least 1 sharp book to make any call
-  if (sharpPrices.length === 0) {
-    signal = 'neutral'; confidence = 'low';
-  }
+  if (sharpPrices.length === 0) { signal = 'neutral'; confidence = 'low'; }
 
   return { signal, confidence, sharpAvg, softAvg, divergence, movement, divergenceSignal, movementSignal };
 }
 
 function sharpPublicBadgeHTML(spData) {
-  if (!spData || spData.signal === 'neutral') return '';
-  if (spData.signal === 'sharp') {
-    const opacity = spData.confidence === 'high' ? '1' : '0.7';
-    return `<div class="sp-badge sharp" style="opacity:${opacity}" data-sp='${JSON.stringify(spData)}'>⚡ Sharp</div>`;
-  }
-  if (spData.signal === 'public') {
-    const opacity = spData.confidence === 'high' ? '1' : '0.7';
-    return `<div class="sp-badge public" style="opacity:${opacity}" data-sp='${JSON.stringify(spData)}'>👥 Public</div>`;
-  }
-  return '';
+  if (!spData) return '';
+  const conf = spData.confidence;
+  const opacity = conf === 'high' ? '1' : conf === 'medium' ? '0.85' : '0.6';
+  if (spData.signal === 'sharp') return `<div class="sp-badge sharp" style="opacity:${opacity}">⚡ Sharp${conf==='high'?' ★':conf==='low'?' ?':''}</div>`;
+  if (spData.signal === 'public') return `<div class="sp-badge public" style="opacity:${opacity}">👥 Public${conf==='high'?' ★':conf==='low'?' ?':''}</div>`;
+  return `<div class="sp-badge neutral">➖ Neutral</div>`;
 }
 
 function spTooltipHTML(spData) {
@@ -703,11 +707,9 @@ function renderGames(games,sport){
           trueProbHTML=`<div class="true-prob" data-tip="${encodeURIComponent(tpTip)}" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">True: ${trueProb.toFixed(1)}%</div>`;
         }
 
-        let spBadgeHTML='';
-        if(spData&&spData.signal!=='neutral'){
-          const spTip=spTooltipHTML(spData);
-          spBadgeHTML=`<div class="sp-badge ${spData.signal}" style="opacity:${spData.confidence==='high'?'1':'0.75'}" data-tip="${encodeURIComponent(spTip)}" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">${spData.signal==='sharp'?'⚡ Sharp':'👥 Public'}</div>`;
-        }
+        const spTip=spData?spTooltipHTML(spData):'';
+        const spBadgeRaw=sharpPublicBadgeHTML(spData);
+        const spBadgeHTML=spBadgeRaw&&spData?spBadgeRaw.replace('<div class="sp-badge',`<div class="sp-badge`).replace('>',` ${spTip?`data-tip="${encodeURIComponent(spTip)}" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()"`:''}>`):'';
 
         let scoreTip='';
         if(rowScore&&!arbResult.isArb) scoreTip=scoreBadgeTooltip(rowScore,bestEdge,booksPresent.length,bookDisagreement,injPenalty);
