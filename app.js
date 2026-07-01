@@ -1,7 +1,9 @@
 const ODDS_KEY = '53374f8933fdc16b45facdb194c56298';
 const CLEAR_KEY = 'sk_live_Bsj-nITf7h_brX-IKkw_9Vk0f9tjtsoDMtul211zzq8';
-const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada'];
+const PROPLINE_KEY = '8554d857fc2b136c18a1239835727fa0';
+const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada','pinnacle','betfair_ex_eu'];
 const SHARP_BOOKS = ['draftkings','fanduel'];
+const SOCCER_SHARP_BOOKS = ['pinnacle','betfair_ex_eu','draftkings','fanduel'];
 const MARKETS = ['h2h','spreads','totals'];
 
 function americanToDecimal(p) { return p > 0 ? (p/100)+1 : (100/Math.abs(p))+1; }
@@ -39,7 +41,8 @@ function getSharpConsensus(outcomeBookMap, outcomeNames) {
   const sharpPrices = {};
   outcomeNames.forEach(name => {
     const bookData = outcomeBookMap[name] || {};
-    const vals = SHARP_BOOKS.map(b => bookData[b]?.price).filter(Boolean);
+    const activeSharpBooks = window._currentSharpBooks || SHARP_BOOKS;
+    const vals = activeSharpBooks.map(b => bookData[b]?.price).filter(Boolean);
     if (vals.length) sharpPrices[name] = vals.reduce((a,b)=>a+b,0)/vals.length;
   });
   const names = Object.keys(sharpPrices);
@@ -147,9 +150,13 @@ async function fetchOdds() {
   injuryCache = {};
 
   try {
+    const isSoccer = sport.includes('soccer') || sport.includes('world_cup');
+    window._currentSharpBooks = isSoccer ? SOCCER_SHARP_BOOKS : SHARP_BOOKS;
+    const regions = isSoccer ? 'us,uk,eu' : 'us';
+
     await Promise.all([fetchScores(sport), fetchInjuries(sport)]);
 
-    const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${ODDS_KEY}&regions=us&markets=${MARKETS.join(',')}&oddsFormat=american&bookmakers=${BOOKS.join(',')}`;
+    const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${ODDS_KEY}&regions=${regions}&markets=${MARKETS.join(',')}&oddsFormat=american&bookmakers=${BOOKS.join(',')}`;
     const res = await fetch(url);
 
     const remaining = res.headers.get('x-requests-remaining');
@@ -374,6 +381,250 @@ function renderGames(games) {
       ${totalEdges > 0 ? `<span class="summary-edge">${totalEdges} positive EV edge${totalEdges>1?'s':''} found</span>` : ''}
     `;
   }
+  container.appendChild(summary);
+  container.appendChild(list);
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-lines').style.display = tab === 'lines' ? 'block' : 'none';
+  document.getElementById('tab-props').style.display = tab === 'props' ? 'block' : 'none';
+  event.target.classList.add('active');
+}
+
+// ── PROP LINE SPORT MAP ───────────────────────────────────────────────────────
+const PROPLINE_SPORT_MAP = {
+  'baseball_mlb': 'baseball_mlb',
+  'basketball_nba': 'basketball_nba',
+  'basketball_ncaab': 'basketball_ncaab',
+  'icehockey_nhl': 'icehockey_nhl',
+  'americanfootball_nfl': 'americanfootball_nfl',
+  'americanfootball_ncaaf': 'americanfootball_ncaaf',
+  'soccer_epl': 'soccer_england_premier_league',
+  'soccer_uefa_champs_league': 'soccer_uefa_champs_league',
+  'soccer_fifa_world_cup': 'soccer_fifa_world_cup'
+};
+
+const PROP_MARKETS = {
+  'baseball_mlb': ['pitcher_strikeouts','batter_hits','batter_home_runs','batter_rbis','batter_runs_scored'],
+  'basketball_nba': ['player_points','player_rebounds','player_assists','player_threes','player_steals'],
+  'basketball_ncaab': ['player_points','player_rebounds','player_assists'],
+  'icehockey_nhl': ['player_points','player_goals','player_assists','player_shots_on_goal'],
+  'americanfootball_nfl': ['player_pass_yds','player_rush_yds','player_reception_yds','player_receptions','player_pass_tds'],
+  'americanfootball_ncaaf': ['player_pass_yds','player_rush_yds','player_reception_yds'],
+  'soccer_epl': ['player_shots_on_target','player_goal_scorer_anytime'],
+  'soccer_uefa_champs_league': ['player_shots_on_target','player_goal_scorer_anytime'],
+  'soccer_fifa_world_cup': ['player_goal_scorer_anytime','player_shots_on_target','player_assists']
+};
+
+function cleanPropName(key) {
+  return key.replace(/^player_/,'').replace(/_/g,' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+async function fetchAll() {
+  const sport = document.getElementById('sport-sel').value;
+  // Fetch game lines
+  fetchOdds();
+  // Fetch props
+  fetchProps(sport);
+}
+
+async function fetchProps(sport) {
+  const container = document.getElementById('props-container');
+  container.innerHTML = '<p class="status-msg">Loading player props...</p>';
+
+  const propSport = PROPLINE_SPORT_MAP[sport];
+  if (!propSport) {
+    container.innerHTML = '<p class="status-msg">Player props not available for this sport yet.</p>';
+    return;
+  }
+
+  const markets = PROP_MARKETS[sport] || ['player_points'];
+
+  try {
+    // First get events for this sport
+    const eventsUrl = `https://api.prop-line.com/v1/sports/${propSport}/events?apiKey=${PROPLINE_KEY}`;
+    const evRes = await fetch(eventsUrl);
+    if (!evRes.ok) throw new Error('Props API error ' + evRes.status);
+    const events = await evRes.json();
+
+    if (!events.length) {
+      container.innerHTML = '<p class="status-msg">No upcoming games with player props right now.</p>';
+      return;
+    }
+
+    // Fetch props for first 5 games to save API calls
+    const propsData = [];
+    for (const event of events.slice(0, 5)) {
+      try {
+        const oddsUrl = `https://api.prop-line.com/v1/sports/${propSport}/events/${event.id}/odds?markets=${markets.join(',')}&apiKey=${PROPLINE_KEY}`;
+        const oddsRes = await fetch(oddsUrl);
+        if (!oddsRes.ok) continue;
+        const data = await oddsRes.json();
+        propsData.push(data);
+      } catch(e) {}
+    }
+
+    if (!propsData.length) {
+      container.innerHTML = '<p class="status-msg">No player props found for upcoming games.</p>';
+      return;
+    }
+
+    renderProps(propsData);
+  } catch(e) {
+    container.innerHTML = `<p class="status-msg">Could not load player props: ${e.message}</p>`;
+  }
+}
+
+function renderProps(games) {
+  const container = document.getElementById('props-container');
+  container.innerHTML = '';
+
+  let totalEdges = 0;
+  let totalArbs = 0;
+  const list = document.createElement('div');
+  list.className = 'games-list';
+
+  games.forEach((game, gi) => {
+    // Build prop map: marketKey -> playerName -> { bookKey: {price, point} }
+    const propMap = {};
+    (game.bookmakers || []).forEach(bm => {
+      (bm.markets || []).forEach(mk => {
+        if (!propMap[mk.key]) propMap[mk.key] = {};
+        (mk.outcomes || []).forEach(o => {
+          const playerKey = o.description || o.name;
+          if (!propMap[mk.key][playerKey]) propMap[mk.key][playerKey] = {};
+          propMap[mk.key][playerKey][bm.key] = { price: o.price, point: o.point, name: o.name };
+        });
+      });
+    });
+
+    const propKeys = Object.keys(propMap);
+    if (!propKeys.length) return;
+
+    // Find actionable props
+    const actionable = [];
+
+    propKeys.forEach(mktKey => {
+      const players = propMap[mktKey];
+      Object.entries(players).forEach(([playerName, bookData]) => {
+        const books = Object.keys(bookData);
+        if (books.length < 2) return;
+
+        const prices = Object.values(bookData).map(d => d.price);
+        const bestPrice = Math.max(...prices);
+        const worstPrice = Math.min(...prices);
+
+        // Sharp consensus from all available books (no dedicated sharp for props)
+        const rawImplied = prices.map(p => decimalToImplied(americanToDecimal(p)));
+        const avgImplied = rawImplied.reduce((a,b)=>a+b,0)/rawImplied.length;
+        const bestImplied = decimalToImplied(americanToDecimal(bestPrice));
+        const edgePct = avgImplied - bestImplied;
+
+        // Check arb: over + under
+        const overBooks = Object.entries(bookData).filter(([,d]) => d.name === 'Over');
+        const underBooks = Object.entries(bookData).filter(([,d]) => d.name === 'Under');
+        let isArb = false;
+        let arbProfit = null;
+
+        if (overBooks.length && underBooks.length) {
+          const bestOver = Math.max(...overBooks.map(([,d])=>d.price));
+          const bestUnder = Math.max(...underBooks.map(([,d])=>d.price));
+          const impliedSum = decimalToImplied(americanToDecimal(bestOver)) + decimalToImplied(americanToDecimal(bestUnder));
+          if (impliedSum < 100) {
+            isArb = true;
+            arbProfit = (100 - impliedSum).toFixed(2);
+            totalArbs++;
+          }
+        }
+
+        if (!isArb && edgePct <= 0.5) return;
+
+        const score = isArb ? 10 : calcAutoScore(edgePct, books.length);
+        if (!isArb && (!score || score < 3)) return;
+
+        totalEdges++;
+        actionable.push({ mktKey, playerName, bookData, bestPrice, edgePct, isArb, arbProfit, score });
+      });
+    });
+
+    if (!actionable.length) return;
+
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.innerHTML = `
+      <div class="game-header">
+        <div class="game-matchup">
+          <div class="team-line"><span class="team-name">${game.away_team || 'Away'}</span></div>
+          <div class="team-line"><span class="team-name">${game.home_team || 'Home'}</span></div>
+          <div class="game-sport">${game.sport_title || ''}</div>
+        </div>
+        <div class="game-status-block">
+          <div class="game-time">${game.commence_time ? formatTime(game.commence_time) : ''}</div>
+        </div>
+      </div>
+    `;
+
+    const table = document.createElement('table');
+    table.className = 'odds-table';
+    const allBooks = [...new Set(actionable.flatMap(r => Object.keys(r.bookData)))];
+
+    table.innerHTML = `<thead><tr>
+      <th class="market-th">Player / Prop</th>
+      ${allBooks.map(b=>`<th class="book-th">${cleanBook(b)}</th>`).join('')}
+      <th class="score-th">Score</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+
+    actionable.forEach(row => {
+      const { mktKey, playerName, bookData, bestPrice, isArb, arbProfit, score } = row;
+      const tr = document.createElement('tr');
+      if (isArb) tr.className = 'arb-row';
+
+      tr.innerHTML = `
+        <td class="market-td">
+          <div class="market-name"><strong>${playerName}</strong></div>
+          <div class="market-side">${cleanPropName(mktKey)}</div>
+          ${isArb ? `<div class="arb-label">ARB · +$${arbProfit} per $100</div>` : ''}
+        </td>
+        ${allBooks.map(bookKey => {
+          const d = bookData[bookKey];
+          if (!d) return `<td class="odds-td empty">—</td>`;
+          const isBest = d.price === bestPrice;
+          const implied = decimalToImplied(americanToDecimal(d.price)).toFixed(1);
+          return `
+            <td class="odds-td${isBest?' best':''}${isArb&&isBest?' arb-best':''}">
+              ${d.point !== undefined && d.point !== null ? `<div class="odds-point">${d.name} ${d.point}</div>` : `<div class="odds-point">${d.name||''}</div>`}
+              <div class="odds-val">${fmt(d.price)}</div>
+              <div class="odds-implied">${implied}%</div>
+            </td>`;
+        }).join('')}
+        <td class="score-td">
+          <div class="ev-score s${score}">${score}</div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    card.appendChild(table);
+    list.appendChild(card);
+  });
+
+  const summary = document.createElement('div');
+  summary.className = 'summary-banner';
+  if (totalEdges === 0 && totalArbs === 0) {
+    summary.innerHTML = `<span class="summary-none">No significant prop edges found right now.</span>`;
+  } else {
+    summary.innerHTML = `
+      ${totalArbs > 0 ? `<span class="summary-arb">${totalArbs} prop arb${totalArbs>1?'s':''} found</span>` : ''}
+      ${totalEdges > 0 ? `<span class="summary-edge">${totalEdges} prop edge${totalEdges>1?'s':''} found</span>` : ''}
+    `;
+  }
+
   container.appendChild(summary);
   container.appendChild(list);
 }

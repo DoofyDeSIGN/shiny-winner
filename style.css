@@ -228,3 +228,25 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .summary-arb { color: #c084fc; }
 .summary-edge { color: var(--green); }
 .summary-none { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+
+/* TABS */
+.tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 1rem;
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 6px;
+  width: fit-content;
+}
+
+.tab {
+  font-size: 13px; font-weight: 600;
+  padding: 7px 20px;
+  border: none; border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.tab:hover { color: var(--text); background: var(--surface-2); }
+.tab.active { background: var(--surface-3); color: var(--text); }
