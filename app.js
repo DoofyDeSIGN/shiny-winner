@@ -362,8 +362,7 @@ function renderGames(games, sport) {
             ${d.point !== undefined && d.point !== null ? `<div class="odds-point">${d.point>0?'+':''}${d.point}</div>` : ''}
             <div class="odds-val">${fmt(d.price)}</div>
             <div class="odds-implied">${implied}%</div>
-            ${edgeVs !== null ? `<div class="odds-edge ${edgeVs>0?'pos':'neg'}">${edgeVs>0?'+':''}${edgeVs.toFixed(1)}%</div>` : ''}
-            ${score ? `<div class="ev-score-inline s${score}">${score}</div>` : ''}
+            ${score ? `<div class="ev-score-inline s${score}">${score}</div>` : (edgeVs !== null && edgeVs < 0 ? `<div class="odds-edge neg">${edgeVs.toFixed(1)}%</div>` : '')}
           </td>`;
         }).join('');
 
@@ -435,11 +434,15 @@ async function fetchProps(sport) {
   }
   const markets = PROP_MARKETS[sport] || ['player_points'];
 
+
   try {
     const evRes = await fetch(`https://api.prop-line.com/v1/sports/${propSport}/events?apiKey=${PROPLINE_KEY}`);
-    if (!evRes.ok) throw new Error(evRes.status);
+    if (!evRes.ok) {
+      const errText = await evRes.text().catch(()=>'');
+      throw new Error(`Events ${evRes.status}: ${errText.substring(0,120)}`);
+    }
     const evData = await evRes.json();
-    const events = evData.data || evData || [];
+    const events = Array.isArray(evData) ? evData : (evData.data || evData.events || []);
 
     if (!events.length) {
       container.innerHTML = '<p class="status-msg">No upcoming games with player props right now.</p>';
@@ -449,21 +452,24 @@ async function fetchProps(sport) {
     const propsData = [];
     for (const event of events.slice(0,6)) {
       try {
-        const oddsRes = await fetch(`https://api.prop-line.com/v1/sports/${propSport}/events/${event.id}/odds?markets=${markets.join(',')}&apiKey=${PROPLINE_KEY}`);
+        const eventId = event.id || event.event_id;
+        const oddsRes = await fetch(`https://api.prop-line.com/v1/sports/${propSport}/events/${eventId}/odds?markets=${markets.join(',')}&apiKey=${PROPLINE_KEY}`);
         if (!oddsRes.ok) continue;
         const d = await oddsRes.json();
-        propsData.push(d);
-      } catch(e) {}
+        const normalized = Array.isArray(d) ? d[0] : (d.bookmakers ? d : (d.data || d));
+        if (normalized && (normalized.bookmakers || normalized.id)) propsData.push(normalized);
+      } catch(e) { console.log('prop fetch err', e); }
     }
 
     if (!propsData.length) {
-      container.innerHTML = '<p class="status-msg">No player props found for today\'s games.</p>';
+      container.innerHTML = '<p class="status-msg">No player props posted yet for today's games.</p>';
       return;
     }
     renderProps(propsData);
   } catch(e) {
-    container.innerHTML = `<p class="status-msg">Could not load props: ${e.message}</p>`;
+    container.innerHTML = `<p class="status-msg">Props error: ${e.message}</p>`;
   }
+
 }
 
 function renderProps(games) {

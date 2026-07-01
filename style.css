@@ -3,12 +3,12 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f0f2f5;
-  --surface: #ffffff;
-  --surface-2: #f7f8fa;
-  --surface-3: #eef0f4;
-  --border: #e4e7ec;
-  --border-strong: #d0d5dd;
+  --bg: #f5f0e8;
+  --surface: #ede8df;
+  --surface-2: #e8e2d8;
+  --surface-3: #e0d9ce;
+  --border: #d8d1c4;
+  --border-strong: #c8bfb0;
   --text: #0f1117;
   --text-secondary: #4a5568;
   --text-muted: #9aa3b2;
