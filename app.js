@@ -12,8 +12,7 @@ function decimalToImplied(decimal) {
 
 function calcEV(myProb, decimal, stake) {
   const win = (decimal - 1) * stake;
-  const lose = stake;
-  return ((myProb / 100) * win) - ((1 - myProb / 100) * lose);
+  return ((myProb / 100) * win) - ((1 - myProb / 100) * stake);
 }
 
 function formatAmerican(n) {
@@ -24,6 +23,10 @@ function formatTime(isoStr) {
   const d = new Date(isoStr);
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
     + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function cleanBookName(key) {
+  return key.replace(/_us$/, '').replace(/_/g, ' ');
 }
 
 async function fetchOdds() {
@@ -45,7 +48,7 @@ async function fetchOdds() {
     const used = res.headers.get('x-requests-used');
     if (remaining !== null) {
       apiNote.style.display = 'block';
-      apiNote.textContent = `API usage: ${used} requests used · ${remaining} remaining this month (free tier: 500/month)`;
+      apiNote.textContent = `${used} requests used · ${remaining} remaining this month (free tier: 500/month)`;
     }
 
     if (!res.ok) {
@@ -54,16 +57,14 @@ async function fetchOdds() {
     }
 
     const data = await res.json();
-
     if (!data.length) {
-      container.innerHTML = '<p class="status-msg">No upcoming games found for this sport and market right now. Try another sport or check back closer to game time.</p>';
+      container.innerHTML = '<p class="status-msg">No upcoming games found for this sport and market. Try another or check back closer to game time.</p>';
       return;
     }
 
     renderGames(data, market);
-
   } catch(e) {
-    container.innerHTML = `<p class="status-msg">Could not load odds: ${e.message}<br><br>Check that your API key is correct in app.js and try again.</p>`;
+    container.innerHTML = `<p class="status-msg">Could not load odds: ${e.message}</p>`;
   } finally {
     btn.disabled = false;
     btn.textContent = 'Fetch live odds';
@@ -77,10 +78,7 @@ function renderGames(games, market) {
   list.className = 'games-list';
 
   games.slice(0, 15).forEach((game, gi) => {
-    const card = document.createElement('div');
-    card.className = 'game-card';
-
-    // Build outcome map: outcome name -> array of {book, price, point}
+    // Build outcome map
     const outcomeMap = {};
     game.bookmakers.forEach(bm => {
       const mk = bm.markets.find(m => m.key === market);
@@ -95,90 +93,67 @@ function renderGames(games, market) {
     const outcomes = Object.values(outcomeMap);
     if (!outcomes.length) return;
 
+    const card = document.createElement('div');
+    card.className = 'game-card';
+
     // Header
-    const header = document.createElement('div');
-    header.className = 'game-header';
-    header.innerHTML = `
-      <div>
-        <div class="game-teams">${game.away_team} @ ${game.home_team}</div>
-        <div class="game-sport">${game.sport_title}</div>
+    card.innerHTML = `
+      <div class="game-header">
+        <div>
+          <div class="game-teams">${game.away_team} @ ${game.home_team}</div>
+          <div class="game-sport">${game.sport_title}</div>
+        </div>
+        <div class="game-time">${formatTime(game.commence_time)}</div>
       </div>
-      <div class="game-time">${formatTime(game.commence_time)}</div>
     `;
-    card.appendChild(header);
 
     outcomes.forEach((outcome, oi) => {
       const uid = `g${gi}o${oi}`;
       const bestPrice = Math.max(...outcome.books.map(b => b.price));
+      const label = outcome.name + (outcome.point !== undefined ? ' (' + (outcome.point > 0 ? '+' : '') + outcome.point + ')' : '');
 
-      const section = document.createElement('div');
-      section.className = 'outcome-section';
-
-      const label = document.createElement('div');
-      label.className = 'outcome-label';
-      label.textContent = outcome.name + (outcome.point !== undefined ? ' (' + (outcome.point > 0 ? '+' : '') + outcome.point + ')' : '');
-      section.appendChild(label);
-
-      // Books grid
-      const grid = document.createElement('div');
-      grid.className = 'books-grid';
-      outcome.books.forEach(b => {
+      // Build books row HTML
+      const booksHTML = outcome.books.map(b => {
         const isBest = b.price === bestPrice;
         const implied = decimalToImplied(americanToDecimal(b.price)).toFixed(1);
-        const div = document.createElement('div');
-        div.className = 'book-row' + (isBest ? ' best-line' : '');
-        div.innerHTML = `
-          ${isBest ? '<div class="best-tag">best line</div>' : ''}
-          <div class="book-name">${b.book.replace(/_us$/,'').replace(/_/g,' ')}</div>
-          <div class="book-odds">
-            <span class="odd-chip">${formatAmerican(b.price)}</span>
-            <span class="odd-chip muted">${implied}%</span>
+        return `
+          <div class="book-cell${isBest ? ' best' : ''}">
+            ${isBest ? '<span class="best-badge">best</span>' : ''}
+            <div class="book-cell-name">${cleanBookName(b.book)}</div>
+            <div class="book-cell-odds">${formatAmerican(b.price)}</div>
+            <div class="book-cell-implied">${implied}%</div>
           </div>
         `;
-        grid.appendChild(div);
-      });
-      section.appendChild(grid);
+      }).join('');
 
-      // EV calculator
-      const evDiv = document.createElement('div');
-      evDiv.className = 'ev-calc';
-      evDiv.innerHTML = `
-        <div class="ev-calc-title">Your probability model</div>
-        <div class="ev-inputs">
-          <div>
-            <label for="prob-${uid}">My win probability %</label>
+      // Build book options for select
+      const bookOptions = outcome.books.map(b =>
+        `<option value="${b.price}">${cleanBookName(b.book)} (${formatAmerican(b.price)})</option>`
+      ).join('');
+
+      const block = document.createElement('div');
+      block.className = 'outcome-block';
+      block.innerHTML = `
+        <div class="outcome-label">${label}</div>
+        <div class="books-row">${booksHTML}</div>
+        <div class="ev-row">
+          <div class="ev-field">
+            <label>My win prob %</label>
             <input type="number" id="prob-${uid}" min="1" max="99" step="0.5" placeholder="e.g. 58">
           </div>
-          <div>
-            <label for="stake-${uid}">Stake ($)</label>
+          <div class="ev-field">
+            <label>Stake ($)</label>
             <input type="number" id="stake-${uid}" min="1" value="100">
           </div>
-          <div>
-            <label for="book-${uid}">Book to use</label>
-            <select id="book-${uid}">
-              ${outcome.books.map(b => `<option value="${b.price}">${b.book.replace(/_us$/,'').replace(/_/g,' ')} (${formatAmerican(b.price)})</option>`).join('')}
-            </select>
+          <div class="ev-field">
+            <label>Book</label>
+            <select id="book-${uid}">${bookOptions}</select>
           </div>
+          <div class="ev-result" id="result-${uid}"></div>
         </div>
-        <div class="ev-result" id="result-${uid}"></div>
       `;
-      section.appendChild(evDiv);
 
-      // Wire up inputs
-      ['prob','stake','book'].forEach(field => {
-        document.addEventListener('DOMContentLoaded', () => {});
-        const el = evDiv.querySelector(`#${field}-${uid}`);
-        if (el) el.addEventListener('input', () => recalc(uid));
-      });
-
-      card.appendChild(section);
-
-      // divider between outcomes
-      if (oi < outcomes.length - 1) {
-        const div = document.createElement('div');
-        div.className = 'divider';
-        card.appendChild(div);
-      }
+      card.appendChild(block);
     });
 
     list.appendChild(card);
@@ -186,7 +161,7 @@ function renderGames(games, market) {
 
   container.appendChild(list);
 
-  // Wire up all inputs after DOM is built
+  // Wire up all inputs
   document.querySelectorAll('[id^="prob-"], [id^="stake-"], [id^="book-"]').forEach(el => {
     el.addEventListener('input', () => {
       const uid = el.id.split('-').slice(1).join('-');
@@ -206,10 +181,7 @@ function recalc(uid) {
   const stake = parseFloat(stakeEl.value) || 100;
   const chosenPrice = parseFloat(bookEl.value);
 
-  if (!myProb || myProb < 1 || myProb > 99) {
-    resultEl.innerHTML = '';
-    return;
-  }
+  if (!myProb || myProb < 1 || myProb > 99) { resultEl.innerHTML = ''; return; }
 
   const decimal = americanToDecimal(chosenPrice);
   const impliedProb = decimalToImplied(decimal);
@@ -222,6 +194,6 @@ function recalc(uid) {
     <span class="ev-pill ${isPos ? 'ev-pos' : 'ev-neg'}">EV: ${isPos ? '+' : ''}$${ev}</span>
     <span class="ev-pill ${parseFloat(edge) > 0 ? 'ev-pos' : 'ev-neg'}">Edge: ${edge}%</span>
     <span class="ev-pill ev-neutral">ROI: ${roi}%</span>
-    <span class="ev-pill ev-neutral">Book implied: ${impliedProb.toFixed(1)}%</span>
+    <span class="ev-pill ev-neutral">Implied: ${impliedProb.toFixed(1)}%</span>
   `;
 }
