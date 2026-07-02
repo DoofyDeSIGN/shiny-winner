@@ -1,5 +1,5 @@
 const API_BASE = 'https://edgefinder-api.vercel.app';
-const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada'];
+const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada','fanatics'];
 const SHARP_BOOKS = ['draftkings','fanduel'];
 const SOFT_BOOKS = ['bovada','barstool','pointsbet'];
 const SOCCER_SHARP = ['draftkings','fanduel','betmgm','bovada'];
@@ -17,6 +17,7 @@ let scoresTimer = null;
 let scoresCache = {};
 let injuryCache = {};
 let bettingCache = {};
+let espnScoreCache = {};
 let currentSharpBooks = SHARP_BOOKS;
 
 // Opening lines stored on first fetch per session
@@ -135,7 +136,7 @@ function teamLogoHTML(teamName, sport) {
 const BOOK_COLORS = {
   draftkings:'#1a7a43',fanduel:'#1493ff',betmgm:'#c8963e',
   caesars:'#0033a0',bovada:'#e8a020',barstool:'#1a1a1a',
-  pointsbet:'#e30613',williamhill_us:'#009f6b'
+  pointsbet:'#e30613',williamhill_us:'#009f6b',fanatics:'#d4003f'
 };
 function bookBadgeHTML(key) {
   const short = cleanBook(key).split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -501,6 +502,38 @@ async function fetchScores(sport) {
     data.forEach(s=>{scoresCache[s.id]=s;});
     updateScoresOnPage();
   } catch(e){}
+  // Also fetch ESPN live scores for period/inning data
+  try {
+    const espnSport = getESPNScoresSport(sport);
+    if (!espnSport) return;
+    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${espnSport}/scoreboard`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = data.events || [];
+    events.forEach(ev => {
+      const status = ev.status;
+      const competition = ev.competitions?.[0];
+      if (!competition) return;
+      const home = competition.competitors?.find(c=>c.homeAway==='home')?.team?.displayName;
+      const away = competition.competitors?.find(c=>c.homeAway==='away')?.team?.displayName;
+      if (!home || !away) return;
+      const key = away + '_' + home;
+      const period = status?.period || '';
+      const clock = status?.displayClock || '';
+      const inning = status?.type?.shortDetail || '';
+      espnScoreCache[key] = { period, clock, inning, detail: inning || (period ? 'Q' + period + ' ' + clock : '') };
+    });
+  } catch(e) {}
+}
+
+function getESPNScoresSport(sport) {
+  if (sport.includes('mlb')) return 'baseball/mlb';
+  if (sport.includes('nba')) return 'basketball/nba';
+  if (sport.includes('nfl')) return 'football/nfl';
+  if (sport.includes('nhl')) return 'hockey/nhl';
+  if (sport.includes('ncaaf')) return 'football/college-football';
+  if (sport.includes('ncaab')) return 'basketball/mens-college-basketball';
+  return null;
 }
 
 function updateScoresOnPage() {
@@ -583,7 +616,7 @@ async function manualFetch(){
   clearTimeout(refreshTimer);clearInterval(countdownTimer);
   refreshCount=0;
   currentSport=document.getElementById('sport-sel').value;
-  scoresCache={};injuryCache={};bettingCache={};openingLines={};
+  scoresCache={};injuryCache={};bettingCache={};espnScoreCache={};openingLines={};
   await doFetch(currentSport,true);
   scheduleNextRefresh();
   clearInterval(scoresTimer);
@@ -681,8 +714,10 @@ function renderGames(games,sport){
     card.className='game-card';
 
     // Get period/inning info
-    const period = scoreData?.last_update && isLive ? (scoreData.period || scoreData.inning || '') : '';
-    const periodLabel = period ? String(period) : '';
+    // Get period/inning from ESPN cache
+    const gameKey = game.away_team + '_' + game.home_team;
+    const espnData = espnScoreCache[gameKey];
+    const periodLabel = isLive ? (espnData?.detail || '') : '';
 
     card.innerHTML=`
       <div class="game-header" id="scores-${game.id}">
@@ -715,7 +750,7 @@ function renderGames(games,sport){
     table.innerHTML=`<thead><tr>
       <th class="market-th">Market</th>
       ${booksPresent.map(b=>`<th class="book-th"><div class="book-header">${bookBadgeHTML(b)}<span class="book-label">${cleanBook(b)}</span></div></th>`).join('')}
-      <th class="score-th">Score</th>
+      <th class="score-th">Line Value · Signal</th>
     </tr></thead>`;
 
     const tbody=document.createElement('tbody');
@@ -835,10 +870,14 @@ function switchTab(tab,btn){
 
 // ── PROPS ─────────────────────────────────────────────────────────────────────
 const PROPLINE_SPORT_MAP={
-  'baseball_mlb':'baseball_mlb','basketball_nba':'basketball_nba',
-  'basketball_ncaab':'basketball_ncaab','icehockey_nhl':'icehockey_nhl',
-  'americanfootball_nfl':'americanfootball_nfl','americanfootball_ncaaf':'americanfootball_ncaaf',
-  'soccer_epl':'soccer_england_premier_league','soccer_uefa_champs_league':'soccer_uefa_champs_league',
+  'baseball_mlb':'baseball_mlb',
+  'basketball_nba':'basketball_nba',
+  'basketball_ncaab':'basketball_ncaab',
+  'icehockey_nhl':'icehockey_nhl',
+  'americanfootball_nfl':'americanfootball_nfl',
+  'americanfootball_ncaaf':'americanfootball_ncaaf',
+  'soccer_epl':'soccer_england_premier_league',
+  'soccer_uefa_champs_league':'soccer_uefa_champs_league',
   'soccer_fifa_world_cup':'soccer_fifa_world_cup'
 };
 const PROP_MARKETS={
