@@ -878,7 +878,7 @@ const PROPLINE_SPORT_MAP={
   'icehockey_nhl':'icehockey_nhl',
   'americanfootball_nfl':'americanfootball_nfl',
   'americanfootball_ncaaf':'americanfootball_ncaaf',
-  'soccer_epl':'soccer_england_premier_league',
+  'soccer_epl':'soccer_epl',
   'soccer_uefa_champs_league':'soccer_uefa_champs_league',
   'soccer_fifa_world_cup':'soccer_fifa_world_cup'
 };
