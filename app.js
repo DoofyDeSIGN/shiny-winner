@@ -640,11 +640,17 @@ function getBetSignalHTML(score, edgePct, trueProb, bestPrice) {
     ? 'Best price is ' + lineValueStr + ' better than the sharp consensus.'
     : 'Best price is ' + Math.abs(lineValueNum).toFixed(1) + '% below the sharp consensus.';
 
+  // Industry standard thresholds
+  // 2-3% = Value Bet, 3-5% = Good Bet, 5-7% = Strong Bet, 7%+ = Sharp Edge
   let signalHTML = '';
-  if (score && score >= 7) {
-    signalHTML = '<div class="bet-signal strong" data-tip="' + betTip('Strong Bet', 'Score ' + score + '/10. Significant edge vs the sharp consensus. Worth serious consideration.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Strong Bet</div>';
-  } else if (score && score >= 4) {
-    signalHTML = '<div class="bet-signal value" data-tip="' + betTip('Value Bet', 'Score ' + score + '/10. Modest edge over the sharp consensus. Worth considering.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Value Bet</div>';
+  if (lineValueNum >= 7) {
+    signalHTML = '<div class="bet-signal sharp-edge" data-tip="' + betTip('Sharp Edge', lineValueStr + ' edge. Professionals act at this level. Rare — move fast before books adjust.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Sharp Edge</div>';
+  } else if (lineValueNum >= 5) {
+    signalHTML = '<div class="bet-signal strong" data-tip="' + betTip('Strong Bet', lineValueStr + ' edge vs sharp consensus. Serious bettors look for 5%+. Worth acting on.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Strong Bet</div>';
+  } else if (lineValueNum >= 3) {
+    signalHTML = '<div class="bet-signal good" data-tip="' + betTip('Good Bet', lineValueStr + ' edge vs sharp consensus. Solid value — most recreational sharp bettors act here.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Good Bet</div>';
+  } else if (lineValueNum >= 2) {
+    signalHTML = '<div class="bet-signal value" data-tip="' + betTip('Value Bet', lineValueStr + ' edge vs sharp consensus. Marginal but positive value.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Value Bet</div>';
   }
 
   const lineHTML = '<div class="line-value ' + lineClass + '" data-tip="' + betTip('Line Value: ' + lineValueStr, lineTip) + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">' + lineValueStr + '</div>';
@@ -674,6 +680,10 @@ function renderGames(games,sport){
     const card=document.createElement('div');
     card.className='game-card';
 
+    // Get period/inning info
+    const period = scoreData?.last_update && isLive ? (scoreData.period || scoreData.inning || '') : '';
+    const periodLabel = period ? String(period) : '';
+
     card.innerHTML=`
       <div class="game-header" id="scores-${game.id}">
         <div class="teams-col">
@@ -682,7 +692,6 @@ function renderGames(games,sport){
             <span class="team-name${awayLeading?' leading':''}">${game.away_team}</span>
             ${injBadge(awayPenalty)}
             <span class="team-score${awayLeading?' leading':''}" data-team="${game.away_team}">${awayScoreVal!==undefined?awayScoreVal:''}</span>
-            ${isLive?'<span class="game-period">LIVE</span>':''}
           </div>
           <div class="team-row" style="margin-top:6px">
             ${teamLogoHTML(game.home_team,sport)}
@@ -693,8 +702,10 @@ function renderGames(games,sport){
         </div>
         <div class="game-right">
           ${isLive?'<div class="live-badge">● LIVE</div>':''}
+          ${isLive&&periodLabel?`<div class="game-period-display">${periodLabel}</div>`:''}
           <div class="game-time">${formatTime(game.commence_time)}</div>
           <div class="game-sport">${game.sport_title}</div>
+          <div class="game-books">${game.bookmakers.length} books</div>
         </div>
       </div>
     `;

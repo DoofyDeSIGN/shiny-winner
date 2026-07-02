@@ -2,12 +2,12 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
 :root {
-  --bg: #f0ebe0;
-  --surface: #ede7da;
-  --surface-2: #e5dece;
-  --surface-3: #ddd5c2;
-  --border: #cec5b0;
-  --border-strong: #bfb59e;
+  --bg: #ddd5c4;
+  --surface: #d4cabb;
+  --surface-2: #ccc3b0;
+  --surface-3: #c4baaa;
+  --border: #b8ad9a;
+  --border-strong: #a89d8c;
   --text: #1a1510;
   --text-secondary: #4a4235;
   --text-muted: #8a7d6a;
@@ -275,3 +275,24 @@ select:focus,input:focus { border-color:var(--blue); }
   border-radius: 4px;
 }
 .odds-td.best-cell .odds-val { color: var(--green); }
+
+/* NEW BET SIGNAL TIERS */
+.bet-signal.sharp-edge {
+  background: #1a0a2e; color: #c084fc;
+  border: 1.5px solid #7c3aed;
+}
+.bet-signal.good {
+  background: #052e16; color: #86efac;
+  border: 1.5px solid #16a34a;
+}
+
+/* GAME PERIOD / INNING */
+.game-period-display {
+  font-size: 12px; font-weight: 700;
+  color: var(--red); margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+.game-books {
+  font-size: 10px; color: var(--text-muted);
+  margin-top: 3px;
+}
