@@ -1,6 +1,4 @@
-const ODDS_KEY = '53374f8933fdc16b45facdb194c56298';
-const CLEAR_KEY = 'sk_live_Bsj-nITf7h_brX-IKkw_9Vk0f9tjtsoDMtul211zzq8';
-const PROPLINE_KEY = '8554d857fc2b136c18a1239835727fa0';
+const API_BASE = 'https://edgefinder-api.vercel.app';
 const BOOKS = ['draftkings','fanduel','betmgm','caesars','pointsbet','williamhill_us','barstool','bovada'];
 const SHARP_BOOKS = ['draftkings','fanduel'];
 const SOFT_BOOKS = ['bovada','barstool','pointsbet'];
@@ -18,6 +16,7 @@ let currentSport = 'baseball_mlb';
 let scoresTimer = null;
 let scoresCache = {};
 let injuryCache = {};
+let bettingCache = {};
 let currentSharpBooks = SHARP_BOOKS;
 
 // Opening lines stored on first fetch per session
@@ -188,7 +187,41 @@ function getSharpConsensus(outcomeBookMap, outcomeNames, sharpBooks) {
 // Returns: { signal: 'sharp'|'public'|'neutral', confidence: 'high'|'medium'|'low',
 //            sharpAvg, softAvg, divergence, movement, explanation }
 
-function getSharpPublicSignal(gameId, marketKey, outcomeName, bookData, allOutcomes) {
+function getSharpPublicSignal(gameId, marketKey, outcomeName, bookData, allOutcomes, awayTeam, homeTeam) {
+  // Try real betting data first
+  const gameKey = Object.keys(bettingCache).find(k => {
+    const g = bettingCache[k];
+    return (g.away === awayTeam && g.home === homeTeam);
+  });
+  if (gameKey && bettingCache[gameKey].markets[marketKey]) {
+    const mktData = bettingCache[gameKey].markets[marketKey];
+    const isHome = outcomeName === homeTeam;
+    const isAway = outcomeName === awayTeam;
+    const isOver = outcomeName === 'Over';
+    const isUnder = outcomeName === 'Under';
+    let side = isHome ? mktData.home : isAway ? mktData.away : isOver ? mktData.over : isUnder ? mktData.under : null;
+    if (side && side.bets_pct !== null && side.money_pct !== null) {
+      const betsPct = parseFloat(side.bets_pct);
+      const moneyPct = parseFloat(side.money_pct);
+      const moneyBetsDiff = moneyPct - betsPct;
+      // Sharp signal: money % significantly higher than bet % = big bettors on this side
+      // Public signal: bet % high but money % low = lots of small public bets
+      let signal = 'neutral', confidence = 'low';
+      if (moneyBetsDiff >= 15) { signal = 'sharp'; confidence = 'high'; }
+      else if (moneyBetsDiff >= 8) { signal = 'sharp'; confidence = 'medium'; }
+      else if (moneyBetsDiff >= 3) { signal = 'sharp'; confidence = 'low'; }
+      else if (moneyBetsDiff <= -15) { signal = 'public'; confidence = 'high'; }
+      else if (moneyBetsDiff <= -8) { signal = 'public'; confidence = 'medium'; }
+      else if (betsPct >= 65) { signal = 'public'; confidence = 'low'; }
+      return {
+        signal, confidence,
+        betsPct, moneyPct, moneyBetsDiff,
+        realData: true,
+        sharpAvg: null, softAvg: null, divergence: 0, movement: 0,
+        divergenceSignal: 'neutral', movementSignal: 'neutral'
+      };
+    }
+  }
   const sharpPrices = SHARP_BOOKS.map(b=>bookData[b]?.price).filter(Boolean);
   const softPrices = SOFT_BOOKS.map(b=>bookData[b]?.price).filter(Boolean);
 
@@ -462,7 +495,7 @@ function scoreBadgeTooltip(score, edgePct, bookCount, disagreement, injPenalty) 
 // ── DATA FETCHING ─────────────────────────────────────────────────────────────
 async function fetchScores(sport) {
   try {
-    const res=await fetch(`https://api.the-odds-api.com/v4/sports/${sport}/scores/?apiKey=${ODDS_KEY}&daysFrom=1`);
+    const res=await fetch(`${API_BASE}/api/scores?sport=${sport}`);
     if(!res.ok) return;
     const data=await res.json();
     data.forEach(s=>{scoresCache[s.id]=s;});
@@ -498,7 +531,7 @@ async function fetchInjuries(sport){
   const cs=toClearSport(sport);
   if(!cs) return;
   try{
-    const res=await fetch(`https://api.clearsportsapi.com/v1/${cs}/injuries`,{headers:{'Authorization':`Bearer ${CLEAR_KEY}`}});
+    const res=await fetch(`${API_BASE}/api/injuries?sport=${cs}`);
     if(!res.ok) return;
     const data=await res.json();
     const injuries=data.data||data.injuries||data||[];
@@ -512,6 +545,15 @@ async function fetchInjuries(sport){
         injuryCache[team]=Math.min(3,injuryCache[team]+0.5);
     });
   }catch(e){}
+}
+
+async function fetchBetting(sport) {
+  try {
+    const res = await fetch(`${API_BASE}/api/betting?sport=${sport}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    bettingCache = data;
+  } catch(e) {}
 }
 
 // ── REFRESH LOGIC ─────────────────────────────────────────────────────────────
@@ -541,7 +583,7 @@ async function manualFetch(){
   clearTimeout(refreshTimer);clearInterval(countdownTimer);
   refreshCount=0;
   currentSport=document.getElementById('sport-sel').value;
-  scoresCache={};injuryCache={};openingLines={};
+  scoresCache={};injuryCache={};bettingCache={};openingLines={};
   await doFetch(currentSport,true);
   scheduleNextRefresh();
   clearInterval(scoresTimer);
@@ -560,8 +602,8 @@ async function doFetch(sport,showLoading){
   updateRefreshStatus(true);
   if(showLoading) container.innerHTML='<p class="status-msg">Loading games...</p>';
   try{
-    await Promise.all([fetchScores(sport),fetchInjuries(sport)]);
-    const url=`https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${ODDS_KEY}&regions=${regions}&markets=${MARKETS.join(',')}&oddsFormat=american&bookmakers=${BOOKS.join(',')}`;
+    await Promise.all([fetchScores(sport),fetchInjuries(sport),fetchBetting(sport)]);
+    const url=`${API_BASE}/api/odds?sport=${sport}&regions=${regions}`;
     const res=await fetch(url);
     const remaining=res.headers.get('x-requests-remaining');
     const used=res.headers.get('x-requests-used');
@@ -674,8 +716,8 @@ function renderGames(games,sport){
         const injPenalty=outcomeName===game.away_team?Math.round(homePenalty):Math.round(awayPenalty);
         const rowScore=arbResult.isArb?10:calcRowScore(bestEdge,booksPresent.length,bookDisagreement,injPenalty);
 
-        // Sharp/public signal
-        const spData=getSharpPublicSignal(game.id,mkt.key,outcomeName,bookData,outcomes);
+        // Sharp/public signal — use real betting data if available
+        const spData=getSharpPublicSignal(game.id,mkt.key,outcomeName,bookData,outcomes,game.away_team,game.home_team);
 
         const row=document.createElement('tr');
         if(arbResult.isArb) row.className='arb-row';
@@ -782,9 +824,7 @@ async function fetchProps(sport){
   const markets=PROP_MARKETS[sport]||['player_points'];
   try{
     // Use AllOrigins proxy to bypass CORS
-    const evUrl=`https://api.prop-line.com/v1/sports/${propSport}/events?apiKey=${PROPLINE_KEY}`;
-    const proxiedEv=`https://api.allorigins.win/raw?url=${encodeURIComponent(evUrl)}`;
-    const evRes=await fetch(proxiedEv);
+    const evRes=await fetch(`${API_BASE}/api/props?sport=${propSport}`);
     if(!evRes.ok) throw new Error('Events '+evRes.status);
     const evData=await evRes.json();
     const events=Array.isArray(evData)?evData:(evData.data||evData.events||[]);
@@ -793,9 +833,7 @@ async function fetchProps(sport){
     for(const event of events.slice(0,6)){
       try{
         const eventId=event.id||event.event_id;
-        const oddsUrl=`https://api.prop-line.com/v1/sports/${propSport}/events/${eventId}/odds?markets=${markets.join(',')}&apiKey=${PROPLINE_KEY}`;
-        const proxiedOdds=`https://api.allorigins.win/raw?url=${encodeURIComponent(oddsUrl)}`;
-        const oddsRes=await fetch(proxiedOdds);
+        const oddsRes=await fetch(`${API_BASE}/api/props?sport=${propSport}&eventId=${eventId}&markets=${markets.join(',')}`);
         if(!oddsRes.ok) continue;
         const d=await oddsRes.json();
         const norm=Array.isArray(d)?d[0]:(d.bookmakers?d:(d.data||d));
