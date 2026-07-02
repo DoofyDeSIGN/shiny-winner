@@ -642,8 +642,10 @@ async function doFetch(sport,showLoading){
     const used=res.headers.get('x-requests-used');
     if(remaining!==null) apiNote.innerHTML=`${used} requests used · ${remaining} remaining this month`;
     if(!res.ok) throw new Error('API error '+res.status);
-    const data=await res.json();
-    const filtered=data.filter(g=>g.bookmakers.length>=minBooks);
+    const raw=await res.json();
+    const data=Array.isArray(raw)?raw:(raw.data||raw.games||[]);
+    if(!Array.isArray(data)) throw new Error('Unexpected response from odds API');
+    const filtered=data.filter(g=>g.bookmakers&&g.bookmakers.length>=minBooks);
     if(!filtered.length){
       container.innerHTML='<p class="status-msg">No games found. Try lowering Min Books.</p>';
     }else{
