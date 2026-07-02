@@ -625,6 +625,32 @@ async function doFetch(sport,showLoading){
   }
 }
 
+// ── BET SIGNAL ────────────────────────────────────────────────────────────────
+function betTip(title, note) {
+  return encodeURIComponent('<div class="tooltip-title">' + title + '</div><div class="tooltip-note">' + note + '</div>');
+}
+
+function getBetSignalHTML(score, edgePct, trueProb, bestPrice) {
+  if (!trueProb || !bestPrice) return '<div class="bet-signal none">—</div>';
+  const implied = decimalToImplied(americanToDecimal(bestPrice));
+  const lineValueNum = parseFloat((trueProb - implied).toFixed(1));
+  const lineValueStr = (lineValueNum > 0 ? '+' : '') + lineValueNum.toFixed(1) + '%';
+  const lineClass = lineValueNum > 0 ? 'pos' : lineValueNum < 0 ? 'neg' : 'neutral';
+  const lineTip = lineValueNum > 0
+    ? 'Best price is ' + lineValueStr + ' better than the sharp consensus.'
+    : 'Best price is ' + Math.abs(lineValueNum).toFixed(1) + '% below the sharp consensus.';
+
+  let signalHTML = '';
+  if (score && score >= 7) {
+    signalHTML = '<div class="bet-signal strong" data-tip="' + betTip('Strong Bet', 'Score ' + score + '/10. Significant edge vs the sharp consensus. Worth serious consideration.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Strong Bet</div>';
+  } else if (score && score >= 4) {
+    signalHTML = '<div class="bet-signal value" data-tip="' + betTip('Value Bet', 'Score ' + score + '/10. Modest edge over the sharp consensus. Worth considering.') + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">Value Bet</div>';
+  }
+
+  const lineHTML = '<div class="line-value ' + lineClass + '" data-tip="' + betTip('Line Value: ' + lineValueStr, lineTip) + '" onmouseenter="showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">' + lineValueStr + '</div>';
+  return lineHTML + signalHTML;
+}
+
 // ── RENDER GAMES ──────────────────────────────────────────────────────────────
 function renderGames(games,sport){
   const container=document.getElementById('games-container');
@@ -768,12 +794,12 @@ function renderGames(games,sport){
             <div class="market-name">${oi===0?`<strong>${mkt.label}</strong>`:''}</div>
             <div class="market-side">${sideLabel}</div>
             ${trueProbHTML}
-            ${spBadgeHTML}
+
             ${arbLabelHTML}
           </td>
           ${cellsHTML}
           <td class="score-td">
-            ${rowScore?`<div class="ev-score s${rowScore}" data-tip="${encodeURIComponent(scoreTip)}" onmouseenter="if(this.dataset.tip)showTooltip(event,decodeURIComponent(this.dataset.tip))" onmouseleave="hideTooltip()">${rowScore}</div>`:'<div class="ev-score-empty">—</div>'}
+            ${getBetSignalHTML(rowScore, bestEdge, trueProb, bestPrice)}
           </td>
         `;
         tbody.appendChild(row);

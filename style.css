@@ -238,3 +238,40 @@ select:focus,input:focus { border-color:var(--blue); }
   background: var(--surface-3); color: var(--text-muted);
   border: 1px solid var(--border);
 }
+
+/* BET SIGNAL COLUMN */
+.score-td { text-align: center; vertical-align: middle; padding: 8px 10px; min-width: 110px; }
+
+.bet-signal {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; white-space: nowrap; cursor: help;
+  margin-bottom: 4px;
+}
+.bet-signal.strong {
+  background: #14532d; color: #4ade80;
+  border: 1.5px solid #16a34a;
+}
+.bet-signal.value {
+  background: #1e3a5f; color: #60a5fa;
+  border: 1.5px solid #2563eb;
+}
+.bet-signal.none { color: var(--text-muted); font-size: 12px; }
+
+.line-value {
+  display: block; font-size: 13px; font-weight: 800;
+  font-family: 'Barlow Condensed', sans-serif;
+  cursor: help; margin-bottom: 3px;
+}
+.line-value.pos { color: var(--green); }
+.line-value.neg { color: var(--red); }
+.line-value.neutral { color: var(--text-muted); }
+
+/* Reduce green cell noise — only outline best, no background fill */
+.odds-td.best-cell {
+  background: transparent;
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.odds-td.best-cell .odds-val { color: var(--green); }
